@@ -9797,7 +9797,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var APP_ID = '220282335163528';
 
 var user = {
-  psid: 'user_1',
+  psid: 'user_2',
   tid: 'thread_1'
 };
 
@@ -9837,19 +9837,19 @@ var Client = function () {
         var url = serverURL + '/user/' + user.psid; // TODO fix psid
         var options = null;
       }
-      return this.performRequest(url, options);
+      return this.performSpotifyRequest(url, options);
     }
   }, {
     key: 'join',
     value: function join() {
-      console.log('join');
       var self = this;
       var options = {
         method: 'POST',
         body: JSON.stringify({
           'tid': user.tid,
           'psid': user.psid,
-          'accessToken': accessToken
+          'access_token': accessToken,
+          'refresh_token': refreshToken
         }) };
 
       var url = serverURL + '/join';
@@ -9921,6 +9921,7 @@ var Client = function () {
       var options = {
         method: 'POST',
         body: JSON.stringify({
+          psid: user.psid,
           tid: user.tid,
           uri: trackInfoMap['uri'],
           duration: trackInfoMap['duration'],
@@ -9934,45 +9935,9 @@ var Client = function () {
       return new Promise(function (resolve, reject) {
         request.then(function (response) {
           // figure out if bad token
-          if (response.status == 401) {
-            //bad token
-            return self.renewToken().then(function () {
-              return fetch(url, options).then(function (response) {
-                return response.json();
-              });
-            });
-          } else if (response.status == 500) {
-            window.alert('Please make sure spotify is RUNNING and try again');
+          if (response.status != 200) {
+            window.alert('Please make sure spotify is RUNNING and Rejoin');
             throw Error;
-          } else if (response.status == 204) {
-            window.alert('Please make sure spotify is OPEN and try again');
-            throw Error;
-          } else {
-            return response.json();
-          }
-        }).then(function (json) {
-          resolve(json);
-        }).catch(function (err) {
-          reject(err);
-        });
-      });
-    }
-  }, {
-    key: 'performRequest',
-    value: function performRequest(url, options) {
-      var self = this;
-      var request = fetch(url, options);
-      return new Promise(function (resolve, reject) {
-        request.then(function (response) {
-          // figure out if bad token
-          if (response.status !== 200) {
-            //bad token
-            return self.renewToken().then(function () {
-              options.headers.Authorization = 'Bearer ' + accessToken;
-              return fetch(url, options).then(function (response) {
-                return response.json();
-              });
-            });
           } else {
             return response.json();
           }
@@ -9991,7 +9956,10 @@ var Client = function () {
       return new Promise(function (resolve, reject) {
         request.then(function (response) {
           // figure out if bad token
-          if (response.status !== 200) {
+          if (response.status == 404) {
+            // eg no user
+            throw Error;
+          } else if (response.status !== 200) {
             //bad token
             return self.renewToken().then(function () {
               options.headers.Authorization = 'Bearer ' + accessToken;
@@ -10224,6 +10192,7 @@ var SavedSongsList = function (_React$Component4) {
       }).catch(function (ex) {
         return false;
       }).then(function () {
+        // join after component mounts so they dont both try to renew tokens
         client.join();
       });
     }

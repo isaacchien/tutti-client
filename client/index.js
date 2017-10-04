@@ -5,7 +5,7 @@ import querystring from 'querystring';
 var APP_ID = '220282335163528';
 
 var user = {
-  psid: 'user_1',
+  psid: 'user_2',
   tid: 'thread_1'
 }
 
@@ -39,17 +39,17 @@ class Client {
       var url = serverURL + '/user/' + user.psid // TODO fix psid
       var options = null;
     }
-    return this.performRequest(url, options);
+    return this.performSpotifyRequest(url, options);
   }
   join(){
-    console.log('join');
     let self = this
     var options = {
       method: 'POST',
       body: JSON.stringify({
         'tid': user.tid,
         'psid': user.psid,
-        'accessToken': accessToken
+        'access_token': accessToken,
+        'refresh_token': refreshToken
       })};
     
     var url = serverURL + '/join'
@@ -120,6 +120,7 @@ class Client {
     var options = {
       method:'POST',
       body: JSON.stringify({
+        psid: user.psid,
         tid: user.tid,
         uri: trackInfoMap['uri'],
         duration: trackInfoMap['duration'],
@@ -134,50 +135,9 @@ class Client {
       request
       .then(function (response) {
         // figure out if bad token
-        if (response.status == 401){
-          //bad token
-          return self.renewToken()
-          .then(
-            function (){
-              return fetch(url, options)
-                .then(function(response) {
-                  return response.json()
-                })
-          })
-        } else if (response.status == 500){
-          window.alert('Please make sure spotify is RUNNING and try again')
+        if (response.status != 200){
+          window.alert('Please make sure spotify is RUNNING and Rejoin')
           throw Error;
-        } else if (response.status == 204){
-          window.alert('Please make sure spotify is OPEN and try again')
-          throw Error;
-        } else {
-          return response.json()      
-        }
-      }).then (function (json) {
-        resolve(json)
-      }).catch (function (err) {
-        reject(err)
-      })
-    })    
-  }
-  performRequest(url, options){
-    let self = this
-    let request = fetch(url, options);
-    return new Promise(function (resolve, reject) {
-      request
-      .then(function (response) {
-        // figure out if bad token
-        if (response.status !== 200){
-          //bad token
-          return self.renewToken()
-          .then(
-            function (){
-            options.headers.Authorization = 'Bearer ' + accessToken
-            return fetch(url, options)
-              .then(function(response) {
-                return response.json()
-              })
-          })
         } else {
           return response.json()      
         }
@@ -195,7 +155,9 @@ class Client {
       request
       .then(function (response) {
         // figure out if bad token
-        if (response.status !== 200){
+        if (response.status == 404){ // eg no user
+          throw Error;
+        } else if (response.status !== 200){
           //bad token
           return self.renewToken()
           .then(
@@ -349,6 +311,7 @@ class SavedSongsList extends React.Component {
     }).catch(function(ex) {
       return false;
     }).then(()=> {
+      // join after component mounts so they dont both try to renew tokens
       client.join();
     });  
   }
