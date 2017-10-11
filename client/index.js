@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from 'react-dom';
 import querystring from 'querystring';
 
-var APP_ID = '220282335163528';
+var APP_ID = '1737594129877596';
 
 var user = {
   psid: 'user_2',
@@ -14,7 +14,7 @@ var redirect_uri = 'https://river-dash.glitch.me';
 var refreshToken;
 var accessToken;
 var tokenRefreshAttempts = 0
-var serverURL = 'https://localhost';
+var serverURL = 'https://river-dash.appspot.com';
 let app = document.getElementById("app").innerHTML;
 
 // keep for dev reasons only 
@@ -25,6 +25,7 @@ class Client {
     let self = this
     var indexParams = querystring.parse(location.search); 
     if ('?code' in indexParams){
+      // this is a callback from spotify
       var code = indexParams['?code'];
       var url = serverURL + '/callback'
       var options = {
@@ -35,11 +36,41 @@ class Client {
           psid: user.psid
         })
       }
+      this.performSpotifyRequest(url, options)
+      .then(function(json){
+        console.log("got tokens: ", json)
+        accessToken = json.access_token;
+        refreshToken = json.refresh_token;
+
+        render(<App/>, document.getElementById('app'));  
+      });
+
     } else {
       var url = serverURL + '/user/' + user.psid // TODO fix psid
-      var options = null;
+      var options = {
+        method:'GET',
+      };
+      let request = fetch(url, options);
+      console.log("request: ", request)
+      request.then(function(response){
+        if (response.status == 200){
+          return response.json()
+        } else {
+          throw Error
+        }
+      }).then(function(json){
+        console.log("got tokens: ", json)
+        accessToken = json.access_token;
+        refreshToken = json.refresh_token;
+
+        render(<App/>, document.getElementById('app'));  
+
+      }).catch(function(error){
+        console.log("user not found")
+        render(<LoginButton />, document.getElementById('app'));
+      })
     }
-    return this.performSpotifyRequest(url, options);
+
   }
   join(){
     let self = this
@@ -130,24 +161,60 @@ class Client {
         name: trackInfoMap['name']
         })
     };
-    let request = fetch(url, options);
-    return new Promise(function (resolve, reject) {
-      request
-      .then(function (response) {
-        // figure out if bad token
-        if (response.status != 200){
-          window.alert('Please make sure spotify is RUNNING and Rejoin')
-          throw Error;
-        } else {
-          return response.json()      
-        }
-      }).then (function (json) {
-        resolve(json)
-      }).catch (function (err) {
-        reject(err)
-      })
-    })    
+    var messageToShare = {
+      "attachment":{
+         "type":"template",
+         "payload":{
+             "template_type":"generic",
+             "elements": [{
+                 "title": trackInfoMap['name'],
+                 "subtitle": trackInfoMap['artist'],
+                 "image_url": trackInfoMap['image'],
+                 "default_action":{
+                     "type":"web_url",
+                     "url": "https://river-dash.glitch.me",
+                      "messenger_extensions":true
+                 },
+                 "buttons":[{
+                     "type":"web_url",
+                     "url":"https://river-dash.glitch.me",
+                     "title":"Join Session",
+                     "messenger_extensions":true
+                 }]
+             }]
+         }
+      }
+    }; 
+    window.MessengerExtensions.beginShareFlow(function success(response) {
+      // if(response.is_sent){
+          // The user actually did share.
+      if(response.is_sent){
+      let request = fetch(url, options);
+        return new Promise(function (resolve, reject) {
+          request
+          .then(function (response) {
+            // figure out if bad token
+            if (response.status != 200){
+              window.alert('Please make sure spotify is RUNNING and Rejoin')
+              throw Error;
+            } else {
+              return response.json()      
+            }
+          }).then (function (json) {
+            resolve(json)
+          }).catch (function (err) {
+            reject(err)
+          })
+        })         
+      } 
+    }, function error(errorCode, errorMessage) {      
+    // An error occurred in the process
+      alert('Make sure Spotify is running on your device');
+    },
+    messageToShare,
+    "current_thread");    
   }
+
   performSpotifyRequest(url, options) {
     let self = this
     let request = fetch(url, options);
@@ -202,17 +269,25 @@ class Client {
 }
 // begin page
 let client = new Client();
-client.init(user.tid, user.psid)
-.then(function (json) {
-  // successful init -> join session
-  accessToken = json.access_token;
-  refreshToken = json.refresh_token;
 
-  render(<App/>, document.getElementById('app'));  
-})
-.catch(function (err) {
-    render(<LoginButton />, document.getElementById('app'));
-})
+window.extAsyncInit = function() {
+  window.MessengerExtensions.getContext(APP_ID, 
+    function success(result){
+      console.log('success get context');
+
+      user.tid = result.tid;
+      user.psid = result.psid;
+
+      client.init(user.tid, user.psid)
+
+  },
+    function error(error, message){
+      // probably on desktop no permission
+      console.log('message: ', message);
+      render(<h3>Sorry, Messenger Extensions are currently only available for iOS and Android.</h3>, document.getElementById('app'));
+    }
+  );
+};
 
 class LoginButton extends React.Component {
   constructor(props){
@@ -296,7 +371,7 @@ class SavedSongsList extends React.Component {
         trackInfoMap['uri'] = items[i].track.uri;
         trackInfoMap['duration'] = items[i].track.duration_ms;
         trackInfoMap['id'] = items[i].track.id;
-        trackInfoMap['image'] = items[i].track.album.images[2].url;
+        trackInfoMap['image'] = items[i].track.album.images[0].url;
         var artistNames = [];
         for (var j = 0; j < artists.length; j++){
           artistNames.push(artists[j].name);
@@ -389,7 +464,7 @@ class App extends React.Component {
           trackInfoMap['uri'] = items[i].uri;
           trackInfoMap['duration'] = items[i].duration_ms;
           trackInfoMap['id'] = items[i].id;
-          trackInfoMap['image'] = items[i].album.images[2].url;
+          trackInfoMap['image'] = items[i].album.images[0].url;
           var artistNames = [];
           for (var j = 0; j < artists.length; j++){
             artistNames.push(artists[j].name);

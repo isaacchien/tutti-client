@@ -9794,7 +9794,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var APP_ID = '220282335163528';
+var APP_ID = '1737594129877596';
 
 var user = {
   psid: 'user_2',
@@ -9806,7 +9806,7 @@ var redirect_uri = 'https://river-dash.glitch.me';
 var refreshToken;
 var accessToken;
 var tokenRefreshAttempts = 0;
-var serverURL = 'https://localhost';
+var serverURL = 'https://river-dash.appspot.com';
 var app = document.getElementById("app").innerHTML;
 
 // keep for dev reasons only 
@@ -9823,6 +9823,7 @@ var Client = function () {
       var self = this;
       var indexParams = _querystring2.default.parse(location.search);
       if ('?code' in indexParams) {
+        // this is a callback from spotify
         var code = indexParams['?code'];
         var url = serverURL + '/callback';
         var options = {
@@ -9833,11 +9834,37 @@ var Client = function () {
             psid: user.psid
           })
         };
+        this.performSpotifyRequest(url, options).then(function (json) {
+          console.log("got tokens: ", json);
+          accessToken = json.access_token;
+          refreshToken = json.refresh_token;
+
+          (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
+        });
       } else {
         var url = serverURL + '/user/' + user.psid; // TODO fix psid
-        var options = null;
+        var options = {
+          method: 'GET'
+        };
+        var request = fetch(url, options);
+        console.log("request: ", request);
+        request.then(function (response) {
+          if (response.status == 200) {
+            return response.json();
+          } else {
+            throw Error;
+          }
+        }).then(function (json) {
+          console.log("got tokens: ", json);
+          accessToken = json.access_token;
+          refreshToken = json.refresh_token;
+
+          (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
+        }).catch(function (error) {
+          console.log("user not found");
+          (0, _reactDom.render)(_react2.default.createElement(LoginButton, null), document.getElementById('app'));
+        });
       }
-      return this.performSpotifyRequest(url, options);
     }
   }, {
     key: 'join',
@@ -9931,22 +9958,55 @@ var Client = function () {
           name: trackInfoMap['name']
         })
       };
-      var request = fetch(url, options);
-      return new Promise(function (resolve, reject) {
-        request.then(function (response) {
-          // figure out if bad token
-          if (response.status != 200) {
-            window.alert('Please make sure spotify is RUNNING and Rejoin');
-            throw Error;
-          } else {
-            return response.json();
+      var messageToShare = {
+        "attachment": {
+          "type": "template",
+          "payload": {
+            "template_type": "generic",
+            "elements": [{
+              "title": trackInfoMap['name'],
+              "subtitle": trackInfoMap['artist'],
+              "image_url": trackInfoMap['image'],
+              "default_action": {
+                "type": "web_url",
+                "url": "https://river-dash.glitch.me",
+                "messenger_extensions": true
+              },
+              "buttons": [{
+                "type": "web_url",
+                "url": "https://river-dash.glitch.me",
+                "title": "Join Session",
+                "messenger_extensions": true
+              }]
+            }]
           }
-        }).then(function (json) {
-          resolve(json);
-        }).catch(function (err) {
-          reject(err);
-        });
-      });
+        }
+      };
+      window.MessengerExtensions.beginShareFlow(function success(response) {
+        // if(response.is_sent){
+        // The user actually did share.
+        if (response.is_sent) {
+          var request = fetch(url, options);
+          return new Promise(function (resolve, reject) {
+            request.then(function (response) {
+              // figure out if bad token
+              if (response.status != 200) {
+                window.alert('Please make sure spotify is RUNNING and Rejoin');
+                throw Error;
+              } else {
+                return response.json();
+              }
+            }).then(function (json) {
+              resolve(json);
+            }).catch(function (err) {
+              reject(err);
+            });
+          });
+        }
+      }, function error(errorCode, errorMessage) {
+        // An error occurred in the process
+        alert('Make sure Spotify is running on your device');
+      }, messageToShare, "current_thread");
     }
   }, {
     key: 'performSpotifyRequest',
@@ -10008,15 +10068,25 @@ var Client = function () {
 
 
 var client = new Client();
-client.init(user.tid, user.psid).then(function (json) {
-  // successful init -> join session
-  accessToken = json.access_token;
-  refreshToken = json.refresh_token;
 
-  (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
-}).catch(function (err) {
-  (0, _reactDom.render)(_react2.default.createElement(LoginButton, null), document.getElementById('app'));
-});
+window.extAsyncInit = function () {
+  window.MessengerExtensions.getContext(APP_ID, function success(result) {
+    console.log('success get context');
+
+    user.tid = result.tid;
+    user.psid = result.psid;
+
+    client.init(user.tid, user.psid);
+  }, function error(error, message) {
+    // probably on desktop no permission
+    console.log('message: ', message);
+    (0, _reactDom.render)(_react2.default.createElement(
+      'h3',
+      null,
+      'Sorry, Messenger Extensions are currently only available for iOS and Android.'
+    ), document.getElementById('app'));
+  });
+};
 
 var LoginButton = function (_React$Component) {
   _inherits(LoginButton, _React$Component);
@@ -10177,7 +10247,7 @@ var SavedSongsList = function (_React$Component4) {
           trackInfoMap['uri'] = items[i].track.uri;
           trackInfoMap['duration'] = items[i].track.duration_ms;
           trackInfoMap['id'] = items[i].track.id;
-          trackInfoMap['image'] = items[i].track.album.images[2].url;
+          trackInfoMap['image'] = items[i].track.album.images[0].url;
           var artistNames = [];
           for (var j = 0; j < artists.length; j++) {
             artistNames.push(artists[j].name);
@@ -10327,7 +10397,7 @@ var App = function (_React$Component8) {
             trackInfoMap['uri'] = items[i].uri;
             trackInfoMap['duration'] = items[i].duration_ms;
             trackInfoMap['id'] = items[i].id;
-            trackInfoMap['image'] = items[i].album.images[2].url;
+            trackInfoMap['image'] = items[i].album.images[0].url;
             var artistNames = [];
             for (var j = 0; j < artists.length; j++) {
               artistNames.push(artists[j].name);
