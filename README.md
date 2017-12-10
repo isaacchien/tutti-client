@@ -1,4 +1,4 @@
-# tutti-client
+# Tutti-Client
 
 Tutti   —    Messenger   extension   for   social   music   listening    (2017   -   ongoing,   1-person   project)
 * Lets   Facebook   friends   in   a   thread   listen   to   music   together   in   realtime   while   chatting.
