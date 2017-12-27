@@ -12,7 +12,9 @@
   "dependencies": {
     "express": "^4.15.3",
     "react": "^15.6.1",
-    "react-dom": "^15.6.1"
+    "react-dom": "^15.6.1",
+    "request": "^2.83.0",
+    "body-parser": "^1.18.2"
   },
   "devDependencies": {
     "babel-loader": "^7.0.0",

@@ -17,10 +17,11 @@ var tokenRefreshAttempts = 0
 var serverURL = 'https://river-dash.appspot.com';
 let app = document.getElementById("app").innerHTML;
 
+var threadType;
+
 // keep for dev reasons only 
 // when permission expires on desktop
 class Client {
-
   init(tid, psid) {
     let self = this
     var indexParams = querystring.parse(location.search); 
@@ -70,7 +71,6 @@ class Client {
         render(<LoginButton />, document.getElementById('app'));
       })
     }
-
   }
   join(){
     let self = this
@@ -166,6 +166,7 @@ class Client {
          "type":"template",
          "payload":{
              "template_type":"generic",
+             // "image_aspect_ratio": "square",
              "elements": [{
                  "title": trackInfoMap['name'],
                  "subtitle": trackInfoMap['artist'],
@@ -173,7 +174,8 @@ class Client {
                  "default_action":{
                      "type":"web_url",
                      "url": "https://river-dash.glitch.me",
-                      "messenger_extensions":true
+                     "messenger_extensions":true,
+
                  },
                  "buttons":[{
                      "type":"web_url",
@@ -185,34 +187,68 @@ class Client {
          }
       }
     }; 
-    window.MessengerExtensions.beginShareFlow(function success(response) {
-      // if(response.is_sent){
-          // The user actually did share.
-      if(response.is_sent){
-      let request = fetch(url, options);
-        return new Promise(function (resolve, reject) {
-          request
-          .then(function (response) {
-            // figure out if bad token
-            if (response.status != 200){
-              window.alert('Please make sure spotify is RUNNING and Rejoin')
-              throw Error;
-            } else {
-              return response.json()      
-            }
-          }).then (function (json) {
-            resolve(json)
-          }).catch (function (err) {
-            reject(err)
-          })
-        })         
-      } 
-    }, function error(errorCode, errorMessage) {      
-    // An error occurred in the process
-      alert('Make sure Spotify is running on your device');
-    },
-    messageToShare,
-    "current_thread");    
+    
+    if (threadType == "USER_TO_PAGE"){
+      window.MessengerExtensions.beginShareFlow(function success(response) {
+        if(response.is_sent){
+          window.MessengerExtensions.requestCloseBrowser(null, null);
+
+          let request = fetch(url, options);
+            return new Promise(function (resolve, reject) {
+              request
+              .then(function (response) {
+                // figure out if bad token
+                if (response.status != 200){
+                  window.alert('Please make sure spotify is RUNNING and Rejoin')
+                  throw Error;
+                } else {
+                  return response.json()      
+                }
+              }).then (function (json) {
+                resolve(json)
+              }).catch (function (err) {
+                reject(err)
+              })
+            })         
+          } 
+        }, function error(errorCode, errorMessage) {      
+        // An error occurred in the process
+          alert('Make sure Spotify is running on your device');
+        },
+        messageToShare,
+        "broadcast");    
+    } else {
+        window.MessengerExtensions.beginShareFlow(function success(response) {
+          // if(response.is_sent){
+              // The user actually did share.
+          if(response.is_sent){
+            window.MessengerExtensions.requestCloseBrowser(null, null);
+
+            let request = fetch(url, options);
+              return new Promise(function (resolve, reject) {
+                request
+                .then(function (response) {
+                  // figure out if bad token
+                  if (response.status != 200){
+                    window.alert('Please make sure spotify is RUNNING and Rejoin')
+                    throw Error;
+                  } else {
+                    return response.json()      
+                  }
+                }).then (function (json) {
+                  resolve(json)
+                }).catch (function (err) {
+                  reject(err)
+                })
+              })         
+            } 
+          }, function error(errorCode, errorMessage) {      
+          // An error occurred in the process
+            alert('Make sure Spotify is running on your device');
+          },
+          messageToShare,
+          "current_thread");    
+    }
   }
 
   performSpotifyRequest(url, options) {
@@ -271,10 +307,13 @@ class Client {
 let client = new Client();
 
 window.extAsyncInit = function() {
+    console.log("asking permission")
+  
   window.MessengerExtensions.getContext(APP_ID, 
     function success(result){
-      console.log('success get context');
-
+      
+      threadType = result.thread_type
+    
       user.tid = result.tid;
       user.psid = result.psid;
 
@@ -285,8 +324,7 @@ window.extAsyncInit = function() {
       // probably on desktop no permission
       console.log('message: ', message);
       render(<h3>Sorry, Messenger Extensions are currently only available for iOS and Android.</h3>, document.getElementById('app'));
-    }
-  );
+    });
 };
 
 class LoginButton extends React.Component {
@@ -446,7 +484,6 @@ class App extends React.Component {
     };
     this.handleSearchTextInput = this.handleSearchTextInput.bind(this);
   }
-
   handleSearchTextInput(searchText) {
     this.setState({
       searchText: searchText
@@ -487,7 +524,6 @@ class App extends React.Component {
       });
     }
   }
-
   render() {
     return (
       <div>
