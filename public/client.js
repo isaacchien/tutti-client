@@ -9841,6 +9841,7 @@ var Client = function () {
           accessToken = json.access_token;
           refreshToken = json.refresh_token;
 
+          alert("callback render app");
           (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
         });
       } else {
@@ -9853,6 +9854,7 @@ var Client = function () {
           if (response.status == 200) {
             return response.json();
           } else {
+            alert("bad call to user");
             throw Error;
           }
         }).then(function (json) {
@@ -9861,6 +9863,7 @@ var Client = function () {
 
           (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
         }).catch(function (error) {
+          alert(error);
           (0, _reactDom.render)(_react2.default.createElement(LoginButton, null), document.getElementById('app'));
         });
       }
@@ -9976,17 +9979,11 @@ var Client = function () {
         // if(response.is_sent){
         // The user actually did share.
         if (response.is_sent) {
-          window.MessengerExtensions.requestCloseBrowser(null, null);
 
           var request = fetch(url, options);
           request.then(function (response) {
-            // figure out if bad token
-            if (response.status != 200) {
-              window.alert("Make sure Spotify is opened. Play or pause any song to make sure it's actively running then let Tutti take over.");
-              throw Error;
-            } else {
-              return response.json();
-            }
+            // hide search and show player
+
           });
         }
       }, function error(errorCode, errorMessage) {
@@ -10119,53 +10116,16 @@ var LoginButton = function (_React$Component) {
   return LoginButton;
 }(_react2.default.Component);
 
-var NowPlaying = function (_React$Component2) {
-  _inherits(NowPlaying, _React$Component2);
-
-  function NowPlaying(props) {
-    _classCallCheck(this, NowPlaying);
-
-    // fetch now playing from db
-    var _this2 = _possibleConstructorReturn(this, (NowPlaying.__proto__ || Object.getPrototypeOf(NowPlaying)).call(this, props));
-
-    _this2.nowPlaying = props.nowPlaying;
-    return _this2;
-  }
-
-  _createClass(NowPlaying, [{
-    key: 'render',
-    value: function render() {
-      return _react2.default.createElement(
-        'div',
-        { id: 'now_playing' },
-        _react2.default.createElement('img', { src: this.nowPlaying.image }),
-        _react2.default.createElement(
-          'h4',
-          null,
-          this.nowPlaying.name
-        ),
-        _react2.default.createElement(
-          'h4',
-          null,
-          this.nowPlaying.artist
-        )
-      );
-    }
-  }]);
-
-  return NowPlaying;
-}(_react2.default.Component);
-
-var TrackRow = function (_React$Component3) {
-  _inherits(TrackRow, _React$Component3);
+var TrackRow = function (_React$Component2) {
+  _inherits(TrackRow, _React$Component2);
 
   function TrackRow(props) {
     _classCallCheck(this, TrackRow);
 
-    var _this3 = _possibleConstructorReturn(this, (TrackRow.__proto__ || Object.getPrototypeOf(TrackRow)).call(this, props));
+    var _this2 = _possibleConstructorReturn(this, (TrackRow.__proto__ || Object.getPrototypeOf(TrackRow)).call(this, props));
 
-    _this3.handleClick = _this3.handleClick.bind(_this3);
-    return _this3;
+    _this2.handleClick = _this2.handleClick.bind(_this2);
+    return _this2;
   }
 
   _createClass(TrackRow, [{
@@ -10197,18 +10157,20 @@ var TrackRow = function (_React$Component3) {
   return TrackRow;
 }(_react2.default.Component);
 
-var SavedSongsList = function (_React$Component4) {
-  _inherits(SavedSongsList, _React$Component4);
+var SavedSongsList = function (_React$Component3) {
+  _inherits(SavedSongsList, _React$Component3);
 
   function SavedSongsList(props) {
     _classCallCheck(this, SavedSongsList);
 
-    var _this4 = _possibleConstructorReturn(this, (SavedSongsList.__proto__ || Object.getPrototypeOf(SavedSongsList)).call(this, props));
+    console.log("construtor");
 
-    _this4.state = {
+    var _this3 = _possibleConstructorReturn(this, (SavedSongsList.__proto__ || Object.getPrototypeOf(SavedSongsList)).call(this, props));
+
+    _this3.state = {
       savedSongs: []
     };
-    return _this4;
+    return _this3;
   }
 
   _createClass(SavedSongsList, [{
@@ -10216,34 +10178,32 @@ var SavedSongsList = function (_React$Component4) {
     value: function componentDidMount() {
       var self = this;
       client.getSavedSongs().then(function (json) {
+        console.log("got saved songs");
         var items = json.items;
-        var rows = [];
-        rows.push(_react2.default.createElement(
-          'li',
-          null,
-          'Recommended'
-        ));
-        for (var i = 0; i < items.length; i++) {
+        var listItems = items.map(function (item) {
           var trackInfoMap = {};
-          var artists = items[i].track.album.artists;
-          trackInfoMap['name'] = items[i].track.name;
-          trackInfoMap['uri'] = items[i].track.uri;
-          trackInfoMap['duration'] = items[i].track.duration_ms;
-          trackInfoMap['id'] = items[i].track.id;
-          trackInfoMap['image'] = items[i].track.album.images[0].url;
+          var artists = item.track.album.artists;
+          trackInfoMap['name'] = item.track.name;
+          trackInfoMap['uri'] = item.track.uri;
+          trackInfoMap['duration'] = item.track.duration_ms;
+          trackInfoMap['id'] = item.track.id;
+          trackInfoMap['image'] = item.track.album.images[0].url;
           var artistNames = [];
           for (var j = 0; j < artists.length; j++) {
             artistNames.push(artists[j].name);
           }
           trackInfoMap['artist'] = artistNames.join(', ');
-          rows.push(_react2.default.createElement(TrackRow, { trackInfoMap: trackInfoMap, key: items[i].id }));
-        }
+
+          return _react2.default.createElement(TrackRow, { trackInfoMap: trackInfoMap, key: item.track.id });
+        });
+        console.log("items: ", items);
+        console.log("rows: ", listItems);
         self.setState({
-          savedSongs: rows
+          savedSongs: listItems
         });
       }).then(function () {
         // join after component mounts so they dont both try to renew tokens
-        client.join();
+        // client.join();
       }).catch(function (ex) {
         return false;
       });
@@ -10253,7 +10213,12 @@ var SavedSongsList = function (_React$Component4) {
     value: function render() {
       return _react2.default.createElement(
         'ul',
-        null,
+        { id: 'savedSongsList' },
+        _react2.default.createElement(
+          'li',
+          null,
+          'Recommended'
+        ),
         this.state.savedSongs
       );
     }
@@ -10262,65 +10227,114 @@ var SavedSongsList = function (_React$Component4) {
   return SavedSongsList;
 }(_react2.default.Component);
 
-var NowPlayingList = function (_React$Component5) {
-  _inherits(NowPlayingList, _React$Component5);
+var Player = function (_React$Component4) {
+  _inherits(Player, _React$Component4);
 
-  function NowPlayingList() {
-    _classCallCheck(this, NowPlayingList);
+  function Player(props) {
+    _classCallCheck(this, Player);
 
-    return _possibleConstructorReturn(this, (NowPlayingList.__proto__ || Object.getPrototypeOf(NowPlayingList)).apply(this, arguments));
+    var _this4 = _possibleConstructorReturn(this, (Player.__proto__ || Object.getPrototypeOf(Player)).call(this, props));
+
+    _this4.state = {
+      name: "",
+      artist: "",
+      image: "",
+      playing: false,
+      users: []
+    };
+    return _this4;
   }
 
-  _createClass(NowPlayingList, [{
-    key: 'render',
-    value: function render() {
-      // search spotify
-      return _react2.default.createElement(
-        'ul',
-        null,
-        this.props.searchResults
-      );
+  _createClass(Player, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var _this5 = this;
+
+      this.getThread();
+      this.timerID = setInterval(function () {
+        return _this5.getThread();
+      }, 5000);
+      client.join();
     }
-  }]);
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      clearInterval(this.timerID);
+    }
+  }, {
+    key: 'getThread',
+    value: function getThread() {
 
-  return NowPlayingList;
-}(_react2.default.Component);
+      var self = this;
+      var url = serverURL + '/thread/' + user.tid;
+      var options = {
+        method: 'GET'
+      };
+      var request = fetch(url, options);
+      request.then(function (response) {
+        return response.json();
+      }).then(function (json) {
+        if (json.now_playing !== undefined) {
+          var offset = Date.now() - json.now_playing.start;
 
-var SearchBar = function (_React$Component6) {
-  _inherits(SearchBar, _React$Component6);
-
-  function SearchBar(props) {
-    _classCallCheck(this, SearchBar);
-
-    var _this6 = _possibleConstructorReturn(this, (SearchBar.__proto__ || Object.getPrototypeOf(SearchBar)).call(this, props));
-
-    _this6.handleSearchTextInput = _this6.handleSearchTextInput.bind(_this6);
-    var timeouted;
-    return _this6;
-  }
-
-  _createClass(SearchBar, [{
-    key: 'handleSearchTextInput',
-    value: function handleSearchTextInput(event) {
-      clearTimeout(self.timeouted);
-      self.timeouted = setTimeout(this.props.onSearchTextInput(event.target.value), 100);
+          self.setState({
+            name: json.now_playing.name,
+            artist: json.now_playing.artist,
+            image: json.now_playing.image,
+            playing: offset < json.now_playing.duration,
+            users: json.users
+          });
+        }
+      }).catch(function (error) {
+        console.log(error);
+      });
     }
   }, {
     key: 'render',
     value: function render() {
-      return _react2.default.createElement(
-        'div',
-        { id: 'searchBar' },
-        _react2.default.createElement('input', { type: 'search', placeholder: 'Search for music', onChange: this.handleSearchTextInput })
-      );
+      if (!this.state.name || !this.state.playing) {
+        return _react2.default.createElement(
+          'div',
+          { className: 'player' },
+          _react2.default.createElement(
+            'h1',
+            null,
+            'Search for a song to play'
+          )
+        );
+      } else {
+        return _react2.default.createElement(
+          'div',
+          { className: 'player' },
+          _react2.default.createElement(
+            'h1',
+            null,
+            'Now Playing'
+          ),
+          _react2.default.createElement('img', { src: this.state.image }),
+          _react2.default.createElement(
+            'h2',
+            null,
+            this.state.name,
+            ' - ',
+            this.state.artist
+          ),
+          _react2.default.createElement(
+            'p',
+            null,
+            'Listeners: ',
+            this.state.users
+          )
+        );
+      }
     }
   }]);
 
-  return SearchBar;
+  return Player;
 }(_react2.default.Component);
 
-var ResultsList = function (_React$Component7) {
-  _inherits(ResultsList, _React$Component7);
+var ResultsList = function (_React$Component5) {
+  _inherits(ResultsList, _React$Component5);
 
   function ResultsList() {
     _classCallCheck(this, ResultsList);
@@ -10334,7 +10348,7 @@ var ResultsList = function (_React$Component7) {
       // search spotify
       return _react2.default.createElement(
         'ul',
-        null,
+        { id: 'resultsList' },
         this.props.searchResults
       );
     }
@@ -10343,8 +10357,54 @@ var ResultsList = function (_React$Component7) {
   return ResultsList;
 }(_react2.default.Component);
 
-var App = function (_React$Component8) {
-  _inherits(App, _React$Component8);
+var SearchBar = function (_React$Component6) {
+  _inherits(SearchBar, _React$Component6);
+
+  function SearchBar(props) {
+    _classCallCheck(this, SearchBar);
+
+    var _this7 = _possibleConstructorReturn(this, (SearchBar.__proto__ || Object.getPrototypeOf(SearchBar)).call(this, props));
+
+    _this7.handleFocus = _this7.handleFocus.bind(_this7);
+    _this7.handleBlur = _this7.handleBlur.bind(_this7);
+
+    _this7.handleSearchTextInput = _this7.handleSearchTextInput.bind(_this7);
+    var timeouted;
+    return _this7;
+  }
+
+  _createClass(SearchBar, [{
+    key: 'handleSearchTextInput',
+    value: function handleSearchTextInput(event) {
+      clearTimeout(self.timeouted);
+      self.timeouted = setTimeout(this.props.onSearchTextInput(event.target.value), 100);
+    }
+  }, {
+    key: 'handleFocus',
+    value: function handleFocus() {
+      this.props.onFocusSearch();
+    }
+  }, {
+    key: 'handleBlur',
+    value: function handleBlur() {
+      this.props.onBlurSearch();
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      return _react2.default.createElement(
+        'div',
+        { id: 'searchBar' },
+        _react2.default.createElement('input', { id: 'searchInput', type: 'search', placeholder: 'Search for music', onChange: this.handleSearchTextInput, onFocus: this.handleFocus, onBlur: this.handleBlur })
+      );
+    }
+  }]);
+
+  return SearchBar;
+}(_react2.default.Component);
+
+var App = function (_React$Component7) {
+  _inherits(App, _React$Component7);
 
   function App(props) {
     _classCallCheck(this, App);
@@ -10353,8 +10413,11 @@ var App = function (_React$Component8) {
 
     _this8.state = {
       searchText: '',
-      searchResults: []
+      searchResults: [],
+      showSearch: false
     };
+    _this8.handleFocusSearch = _this8.handleFocusSearch.bind(_this8);
+    _this8.handleBlurSearch = _this8.handleBlurSearch.bind(_this8);
     _this8.handleSearchTextInput = _this8.handleSearchTextInput.bind(_this8);
     return _this8;
   }
@@ -10367,30 +10430,30 @@ var App = function (_React$Component8) {
       this.setState({
         searchText: searchText
       });
-      var rows = [];
       if (searchText) {
         // spotify api call
         client.searchSpotify(searchText).then(function (json) {
           var items = json.tracks.items;
-          for (var i = 0; i < items.length; i++) {
+          var listItems = items.map(function (item) {
             var trackInfoMap = {};
-            var artists = items[i].artists;
-            trackInfoMap['name'] = items[i].name;
-            trackInfoMap['uri'] = items[i].uri;
-            trackInfoMap['duration'] = items[i].duration_ms;
-            trackInfoMap['id'] = items[i].id;
-            trackInfoMap['image'] = items[i].album.images[0].url;
+            var artists = item.artists;
+            trackInfoMap['name'] = item.name;
+            trackInfoMap['uri'] = item.uri;
+            trackInfoMap['duration'] = item.duration_ms;
+            trackInfoMap['id'] = item.id;
+            trackInfoMap['image'] = item.album.images[0].url;
             var artistNames = [];
             for (var j = 0; j < artists.length; j++) {
               artistNames.push(artists[j].name);
             }
             trackInfoMap['artist'] = artistNames.join(',');
-            rows.push(_react2.default.createElement(TrackRow, { trackInfoMap: trackInfoMap, key: items[i].id }));
-          }
-          _this9.setState({
-            searchResults: rows
+
+            return _react2.default.createElement(TrackRow, { trackInfoMap: trackInfoMap, key: item.id.toString() });
           });
 
+          _this9.setState({
+            searchResults: listItems
+          });
           return true;
         }).catch(function (ex) {
           // getNewAccessToken();
@@ -10403,20 +10466,55 @@ var App = function (_React$Component8) {
       }
     }
   }, {
+    key: 'handleFocusSearch',
+    value: function handleFocusSearch() {
+      this.setState({
+        showSearch: true
+      });
+    }
+  }, {
+    key: 'handleBlurSearch',
+    value: function handleBlurSearch() {
+      console.log("blurring");
+      // this.setState({
+      //   showSearch:false
+      // }) 
+    }
+  }, {
     key: 'render',
     value: function render() {
+      // searching state
+
+      /* toggle player and search
+      return (
+        <div>
+        <SearchBar
+          searchText={this.state.searchText}
+          onSearchTextInput={this.handleSearchTextInput}
+          onFocusSearch={this.handleFocusSearch}
+          onBlurSearch={this.handleBlurSearch}
+        />
+        {this.state.showSearch && <ResultsList searchResults={this.state.searchResults}/>}
+        {this.state.showSearch && <SavedSongsList/>}
+        {!this.state.showSearch && <Player/>}
+        </div>
+      );
+      */
+
       return _react2.default.createElement(
         'div',
         null,
         _react2.default.createElement(SearchBar, {
           searchText: this.state.searchText,
-          onSearchTextInput: this.handleSearchTextInput
+          onSearchTextInput: this.handleSearchTextInput,
+          onFocusSearch: this.handleFocusSearch,
+          onBlurSearch: this.handleBlurSearch
         }),
-        _react2.default.createElement(ResultsList, {
-          searchResults: this.state.searchResults
-        }),
-        _react2.default.createElement(SavedSongsList, null)
+        _react2.default.createElement(ResultsList, { searchResults: this.state.searchResults }),
+        _react2.default.createElement(SavedSongsList, null),
+        _react2.default.createElement(Player, null)
       );
+      // playing state
     }
   }]);
 

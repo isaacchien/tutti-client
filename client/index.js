@@ -42,6 +42,7 @@ class Client {
         accessToken = json.access_token;
         refreshToken = json.refresh_token;
 
+        alert("callback render app")
         render(<App/>, document.getElementById('app'));  
       });
 
@@ -55,15 +56,18 @@ class Client {
         if (response.status == 200){
           return response.json()
         } else {
+          alert("bad call to user")
           throw Error
         }
       }).then(function(json){
         accessToken = json.access_token;
         refreshToken = json.refresh_token;
-
+        
+        
         render(<App/>, document.getElementById('app'));  
 
       }).catch(function(error){
+        alert(error)
         render(<LoginButton />, document.getElementById('app'));
       })
     }
@@ -174,18 +178,12 @@ class Client {
       // if(response.is_sent){
           // The user actually did share.
       if(response.is_sent){
-        window.MessengerExtensions.requestCloseBrowser(null, null);
 
         let request = fetch(url, options);
         request
         .then(function (response) {
-          // figure out if bad token
-          if (response.status != 200){
-            window.alert("Make sure Spotify is opened. Play or pause any song to make sure it's actively running then let Tutti take over.")
-            throw Error;
-          } else {
-            return response.json()      
-          }
+          // hide search and show player
+          
         })
       } 
     }, function error(errorCode, errorMessage) {      
@@ -290,22 +288,7 @@ class LoginButton extends React.Component {
   }  
 }
 
-class NowPlaying extends React.Component {
-  constructor(props){
-    super(props);
-    // fetch now playing from db
-    this.nowPlaying = props.nowPlaying;
-  }
-  render(){
-    return (
-      <div id="now_playing">
-        <img src={this.nowPlaying.image}></img>
-        <h4>{this.nowPlaying.name}</h4>
-        <h4>{this.nowPlaying.artist}</h4>
-      </div>
-    );
-  }
-}
+
 
 class TrackRow extends React.Component {
   constructor(props){
@@ -329,39 +312,43 @@ class TrackRow extends React.Component {
 
 class SavedSongsList extends React.Component {
   constructor(props){ 
+    console.log("construtor")
     super(props);
     this.state = {
       savedSongs: []
     }; 
   }
+
   componentDidMount(){
     let self = this
     client.getSavedSongs()
     .then((json)=> {
+      console.log("got saved songs")
       var items = json.items;
-      var rows = [];
-      rows.push(<li>Recommended</li>)
-      for (var i=0; i < items.length; i++) {
+      const listItems = items.map((item) =>{
         var trackInfoMap = {}
-        var artists = items[i].track.album.artists;
-        trackInfoMap['name'] = items[i].track.name;
-        trackInfoMap['uri'] = items[i].track.uri;
-        trackInfoMap['duration'] = items[i].track.duration_ms;
-        trackInfoMap['id'] = items[i].track.id;
-        trackInfoMap['image'] = items[i].track.album.images[0].url;
+        var artists = item.track.album.artists;
+        trackInfoMap['name'] = item.track.name;
+        trackInfoMap['uri'] = item.track.uri;
+        trackInfoMap['duration'] = item.track.duration_ms;
+        trackInfoMap['id'] = item.track.id;
+        trackInfoMap['image'] = item.track.album.images[0].url;
         var artistNames = [];
         for (var j = 0; j < artists.length; j++){
           artistNames.push(artists[j].name);
         }
         trackInfoMap['artist'] = artistNames.join(', ');
-        rows.push(<TrackRow trackInfoMap={trackInfoMap} key={items[i].id} />);
-      }
+          
+        return <TrackRow trackInfoMap={trackInfoMap} key={item.track.id} />
+      });
+      console.log("items: ", items);
+      console.log("rows: ", listItems);
       self.setState({
-        savedSongs: rows
+        savedSongs: listItems
       });
     }).then(()=> {
       // join after component mounts so they dont both try to renew tokens
-      client.join();
+      // client.join();
     }).catch(function(ex) {
       return false;
     });  
@@ -369,88 +356,172 @@ class SavedSongsList extends React.Component {
   
   render() {
     return (
-      <ul>
+      <ul id="savedSongsList">
+        <li>Recommended</li>
         {this.state.savedSongs}
       </ul>  
     );
   }
 }
-class NowPlayingList extends React.Component {
-  render() {
-    // search spotify
-    return(
-      <ul>
-        {this.props.searchResults}
-      </ul>
-    );
-  }
-}
-class SearchBar extends React.Component {
+
+
+class Player extends React.Component {
   constructor(props) {
     super(props);
-    this.handleSearchTextInput = this.handleSearchTextInput.bind(this);
-    var timeouted;
+    this.state = {
+      name: "",
+      artist: "",
+      image: "",
+      playing: false,
+      users:[]
+    };
   }
-  handleSearchTextInput(event) {
-    clearTimeout(self.timeouted);
-    self.timeouted = setTimeout(this.props.onSearchTextInput(event.target.value), 100);
+  componentDidMount() {
+    this.getThread()
+    this.timerID = setInterval(
+      () => this.getThread(),
+      5000
+    );
+    client.join();
+
+
+  }
+  componentWillUnmount() {
+    clearInterval(this.timerID);
+  }
+  getThread() {
+
+    let self = this
+    var url = serverURL + '/thread/' + user.tid 
+    var options = {
+      method:'GET',
+    };
+    let request = fetch(url, options);
+    request.then(function(response){
+      return response.json()
+    }).then(function(json){
+      if (json.now_playing !== undefined){
+        const offset = (Date.now()) - json.now_playing.start;
+
+        self.setState({
+          name:json.now_playing.name,
+          artist:json.now_playing.artist,
+          image:json.now_playing.image,
+          playing: offset < json.now_playing.duration,
+          users: json.users
+        })
+      }
+    }).catch(function(error){
+      console.log(error)
+    });
   }
   render() {
-    return (
-      <div id="searchBar">        
-        <input type="search" placeholder="Search for music" onChange={this.handleSearchTextInput} />
-      </div>
-    );
+    if (!this.state.name || !this.state.playing){
+      return (
+        <div className="player">
+          <h1>Search for a song to play</h1>
+        </div>
+      );   
+    } else {
+      return (
+        <div className="player">
+          <h1>Now Playing</h1>
+          <img src={this.state.image} />
+          <h2>{this.state.name} - {this.state.artist}</h2>
+          <p>Listeners: {this.state.users}</p> 
+        </div>
+      );
+    }
   }
 }
+
 class ResultsList extends React.Component {
   render() {
     // search spotify
     return(
-      <ul>
+      <ul id="resultsList">
         {this.props.searchResults}
       </ul>
     );
   }
 }
+
+class SearchBar extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    this.handleFocus = this.handleFocus.bind(this);
+    this.handleBlur = this.handleBlur.bind(this);
+
+    this.handleSearchTextInput = this.handleSearchTextInput.bind(this);
+    var timeouted;
+  }
+
+  handleSearchTextInput(event) {
+    clearTimeout(self.timeouted);
+    self.timeouted = setTimeout(this.props.onSearchTextInput(event.target.value), 100);
+  }
+  
+  handleFocus(){
+    this.props.onFocusSearch();
+  }
+  
+  handleBlur(){
+    this.props.onBlurSearch();
+  }
+  
+  render() {
+    return (
+      <div id="searchBar">        
+        <input id="searchInput" type="search" placeholder="Search for music" onChange={this.handleSearchTextInput} onFocus={this.handleFocus} onBlur={this.handleBlur}/>
+      </div>
+    );
+  }
+}
+
+
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       searchText: '',
-      searchResults: []
+      searchResults: [],
+      showSearch: false
     };
+    this.handleFocusSearch = this.handleFocusSearch.bind(this);
+    this.handleBlurSearch = this.handleBlurSearch.bind(this);
     this.handleSearchTextInput = this.handleSearchTextInput.bind(this);
   }
+
   handleSearchTextInput(searchText) {
     this.setState({
       searchText: searchText
     });
-    var rows = []
     if (searchText){
       // spotify api call
       client.searchSpotify(searchText)
       .then((json)=> {
-        var items = json.tracks.items;
-        for (var i=0; i < items.length; i++) {
+        var items = json.tracks.items;          
+        const listItems = items.map((item) =>{
           var trackInfoMap = {}
-          var artists = items[i].artists;
-          trackInfoMap['name'] = items[i].name;
-          trackInfoMap['uri'] = items[i].uri;
-          trackInfoMap['duration'] = items[i].duration_ms;
-          trackInfoMap['id'] = items[i].id;
-          trackInfoMap['image'] = items[i].album.images[0].url;
+          var artists = item.artists;
+          trackInfoMap['name'] = item.name;
+          trackInfoMap['uri'] = item.uri;
+          trackInfoMap['duration'] = item.duration_ms;
+          trackInfoMap['id'] = item.id;
+          trackInfoMap['image'] = item.album.images[0].url;
           var artistNames = [];
           for (var j = 0; j < artists.length; j++){
             artistNames.push(artists[j].name);
           }
           trackInfoMap['artist'] = artistNames.join(',');
-          rows.push(<TrackRow trackInfoMap={trackInfoMap} key={items[i].id} />);
-        }
-        this.setState({
-          searchResults: rows
+
+          return <TrackRow trackInfoMap={trackInfoMap} key={item.id.toString()} />
         });
 
+        this.setState({
+          searchResults: listItems
+        });
         return true;
       }).catch(function(ex) {
         // getNewAccessToken();
@@ -462,18 +533,52 @@ class App extends React.Component {
       });
     }
   }
+  
+  handleFocusSearch(){
+    this.setState({
+      showSearch:true
+    })
+  }
+  handleBlurSearch(){
+    console.log("blurring")
+    // this.setState({
+    //   showSearch:false
+    // }) 
+  }
+
   render() {
+    // searching state
+    
+    /* toggle player and search
     return (
       <div>
-        <SearchBar
-          searchText={this.state.searchText}
-          onSearchTextInput={this.handleSearchTextInput}
-        />
-        <ResultsList
-          searchResults={this.state.searchResults}
-        />
-        <SavedSongsList/>
+      <SearchBar
+        searchText={this.state.searchText}
+        onSearchTextInput={this.handleSearchTextInput}
+        onFocusSearch={this.handleFocusSearch}
+        onBlurSearch={this.handleBlurSearch}
+      />
+      {this.state.showSearch && <ResultsList searchResults={this.state.searchResults}/>}
+      {this.state.showSearch && <SavedSongsList/>}
+      {!this.state.showSearch && <Player/>}
       </div>
     );
+    */
+    
+    return (
+      <div>
+      <SearchBar
+        searchText={this.state.searchText}
+        onSearchTextInput={this.handleSearchTextInput}
+        onFocusSearch={this.handleFocusSearch}
+        onBlurSearch={this.handleBlurSearch}
+      />
+      <ResultsList searchResults={this.state.searchResults}/>
+      <SavedSongsList/>
+      <Player/>
+      </div>
+    );
+    // playing state
+
   }
 }
