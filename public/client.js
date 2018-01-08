@@ -9794,9 +9794,9 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var APP_ID = '1737594129877596';
+var APP_ID = 1737594129877596;
 
-var user = {
+var user = { // fix default values
   psid: 'user_2',
   tid: 'thread_1'
 };
@@ -9826,6 +9826,7 @@ var Client = function () {
       var indexParams = _querystring2.default.parse(location.search);
       if ('?code' in indexParams) {
         // this is a callback from spotify
+
         var code = indexParams['?code'];
         var url = serverURL + '/callback';
         var options = {
@@ -9837,19 +9838,17 @@ var Client = function () {
           })
         };
         this.performSpotifyRequest(url, options).then(function (json) {
-          console.log("got tokens: ", json);
           accessToken = json.access_token;
           refreshToken = json.refresh_token;
 
           (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
         });
       } else {
-        var url = serverURL + '/user/' + user.psid; // TODO fix psid
+        var url = serverURL + '/user/' + user.psid;
         var options = {
           method: 'GET'
         };
         var request = fetch(url, options);
-        console.log("request: ", request);
         request.then(function (response) {
           if (response.status == 200) {
             return response.json();
@@ -9857,13 +9856,11 @@ var Client = function () {
             throw Error;
           }
         }).then(function (json) {
-          console.log("got tokens: ", json);
           accessToken = json.access_token;
           refreshToken = json.refresh_token;
 
           (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
         }).catch(function (error) {
-          console.log("user not found");
           (0, _reactDom.render)(_react2.default.createElement(LoginButton, null), document.getElementById('app'));
         });
       }
@@ -9871,6 +9868,7 @@ var Client = function () {
   }, {
     key: 'join',
     value: function join() {
+
       var self = this;
       var options = {
         method: 'POST',
@@ -9880,31 +9878,15 @@ var Client = function () {
           'access_token': accessToken,
           'refresh_token': refreshToken
         }) };
-
       var url = serverURL + '/join';
-      var request = fetch(url, options);
-      return new Promise(function (resolve, reject) {
-        request.then(function (response) {
-          // figure out if bad token
-          if (response.status == 401) {
-            //bad token
-            return self.renewToken().then(function () {
-              return fetch(url, options).then(function (response) {
-                return response.json();
-              });
-            });
-          } else if (response.status == 500) {
-            window.alert('Please make sure spotify is RUNNING and try again');
-          } else if (response.status == 204) {
-            window.alert('Please make sure spotify is OPEN and try again');
-          } else {
-            return response.json();
-          }
-        }).then(function (json) {
-          resolve(json);
-        }).catch(function (err) {
-          reject(err);
-        });
+
+      fetch(url, options).then(function (response) {
+        if (response.status == 204) {
+          //close webview then alert
+          window.alert("Make sure Spotify is opened. Play or pause any song to make sure it's actively running then let Tutti take over.");
+
+          // window.MessengerExtensions.requestCloseBrowser(null, null)  
+        }
       });
     }
   }, {
@@ -9944,7 +9926,6 @@ var Client = function () {
   }, {
     key: 'playSong',
     value: function playSong(trackInfoMap) {
-      console.log('play song');
       var self = this;
       var url = serverURL + '/play';
       var options = {
@@ -9987,61 +9968,31 @@ var Client = function () {
         }
       };
 
+      var shareMode = "current_thread";
       if (threadType == "USER_TO_PAGE") {
-        window.MessengerExtensions.beginShareFlow(function success(response) {
-          if (response.is_sent) {
-            window.MessengerExtensions.requestCloseBrowser(null, null);
-
-            var request = fetch(url, options);
-            return new Promise(function (resolve, reject) {
-              request.then(function (response) {
-                // figure out if bad token
-                if (response.status != 200) {
-                  window.alert('Please make sure spotify is RUNNING and Rejoin');
-                  throw Error;
-                } else {
-                  return response.json();
-                }
-              }).then(function (json) {
-                resolve(json);
-              }).catch(function (err) {
-                reject(err);
-              });
-            });
-          }
-        }, function error(errorCode, errorMessage) {
-          // An error occurred in the process
-          alert('Make sure Spotify is running on your device');
-        }, messageToShare, "broadcast");
-      } else {
-        window.MessengerExtensions.beginShareFlow(function success(response) {
-          // if(response.is_sent){
-          // The user actually did share.
-          if (response.is_sent) {
-            window.MessengerExtensions.requestCloseBrowser(null, null);
-
-            var request = fetch(url, options);
-            return new Promise(function (resolve, reject) {
-              request.then(function (response) {
-                // figure out if bad token
-                if (response.status != 200) {
-                  window.alert('Please make sure spotify is RUNNING and Rejoin');
-                  throw Error;
-                } else {
-                  return response.json();
-                }
-              }).then(function (json) {
-                resolve(json);
-              }).catch(function (err) {
-                reject(err);
-              });
-            });
-          }
-        }, function error(errorCode, errorMessage) {
-          // An error occurred in the process
-          alert('Make sure Spotify is running on your device');
-        }, messageToShare, "current_thread");
+        shareMode = "broadcast";
       }
+      window.MessengerExtensions.beginShareFlow(function success(response) {
+        // if(response.is_sent){
+        // The user actually did share.
+        if (response.is_sent) {
+          window.MessengerExtensions.requestCloseBrowser(null, null);
+
+          var request = fetch(url, options);
+          request.then(function (response) {
+            // figure out if bad token
+            if (response.status != 200) {
+              window.alert("Make sure Spotify is opened. Play or pause any song to make sure it's actively running then let Tutti take over.");
+              throw Error;
+            } else {
+              return response.json();
+            }
+          });
+        }
+      }, function error(errorCode, errorMessage) {
+        // An error occurred in the process
+        alert('Make sure Spotify is running on your device');
+      }, messageToShare, shareMode);
     }
   }, {
     key: 'performSpotifyRequest',
@@ -10075,9 +10026,7 @@ var Client = function () {
   }, {
     key: 'renewToken',
     value: function renewToken() {
-      console.log('renewing token');
       tokenRefreshAttempts++;
-      console.log('refreshAttempts: ', tokenRefreshAttempts);
       var self = this;
       // also returns promise
       return fetch(serverURL + '/refresh', {
@@ -10092,7 +10041,6 @@ var Client = function () {
         return response.json();
       }).then(function (json) {
         accessToken = json['access_token'];
-        console.log('renewed token: ', accessToken);
       });
     }
   }]);
@@ -10105,8 +10053,6 @@ var Client = function () {
 var client = new Client();
 
 window.extAsyncInit = function () {
-  console.log("asking permission");
-
   window.MessengerExtensions.getContext(APP_ID, function success(result) {
 
     threadType = result.thread_type;
@@ -10117,7 +10063,6 @@ window.extAsyncInit = function () {
     client.init(user.tid, user.psid);
   }, function error(error, message) {
     // probably on desktop no permission
-    console.log('message: ', message);
     (0, _reactDom.render)(_react2.default.createElement(
       'h3',
       null,
@@ -10296,12 +10241,11 @@ var SavedSongsList = function (_React$Component4) {
         self.setState({
           savedSongs: rows
         });
-        return true;
-      }).catch(function (ex) {
-        return false;
       }).then(function () {
         // join after component mounts so they dont both try to renew tokens
         client.join();
+      }).catch(function (ex) {
+        return false;
       });
     }
   }, {

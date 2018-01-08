@@ -15,7 +15,6 @@ app.get('/', (request, response) => {
 
 // Accepts POST requests at /webhook endpoint
 app.post('/webhook', (req, res) => {  
-  console.log(req)
   // Parse the request body from the POST
   let body = req.body;
 
