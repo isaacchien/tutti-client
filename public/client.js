@@ -9884,12 +9884,12 @@ var Client = function () {
       var url = serverURL + '/join';
 
       fetch(url, options).then(function (response) {
-        if (response.status == 204) {
-          //close webview then alert
-          window.alert("Make sure Spotify is opened. Play or pause any song to make sure it's actively running then let Tutti take over.");
+        //       if (response.status == 204){
+        //         //close webview then alert
+        //           window.alert("Make sure Spotify is opened. Play or pause any song to make sure it's actively running then let Tutti take over.")
+        //       }
 
-          // window.MessengerExtensions.requestCloseBrowser(null, null)  
-        }
+
       });
     }
   }, {
@@ -9986,10 +9986,7 @@ var Client = function () {
 
           });
         }
-      }, function error(errorCode, errorMessage) {
-        // An error occurred in the process
-        alert('Make sure Spotify is running on your device');
-      }, messageToShare, shareMode);
+      }, null, messageToShare, shareMode);
     }
   }, {
     key: 'performSpotifyRequest',
@@ -10216,7 +10213,7 @@ var SavedSongsList = function (_React$Component3) {
         { id: 'savedSongsList' },
         _react2.default.createElement(
           'li',
-          null,
+          { className: 'header' },
           'Recommended'
         ),
         this.state.savedSongs
@@ -10227,114 +10224,8 @@ var SavedSongsList = function (_React$Component3) {
   return SavedSongsList;
 }(_react2.default.Component);
 
-var Player = function (_React$Component4) {
-  _inherits(Player, _React$Component4);
-
-  function Player(props) {
-    _classCallCheck(this, Player);
-
-    var _this4 = _possibleConstructorReturn(this, (Player.__proto__ || Object.getPrototypeOf(Player)).call(this, props));
-
-    _this4.state = {
-      name: "",
-      artist: "",
-      image: "",
-      playing: false,
-      users: []
-    };
-    return _this4;
-  }
-
-  _createClass(Player, [{
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      var _this5 = this;
-
-      this.getThread();
-      this.timerID = setInterval(function () {
-        return _this5.getThread();
-      }, 5000);
-      client.join();
-    }
-  }, {
-    key: 'componentWillUnmount',
-    value: function componentWillUnmount() {
-      clearInterval(this.timerID);
-    }
-  }, {
-    key: 'getThread',
-    value: function getThread() {
-
-      var self = this;
-      var url = serverURL + '/thread/' + user.tid;
-      var options = {
-        method: 'GET'
-      };
-      var request = fetch(url, options);
-      request.then(function (response) {
-        return response.json();
-      }).then(function (json) {
-        if (json.now_playing !== undefined) {
-          var offset = Date.now() - json.now_playing.start;
-
-          self.setState({
-            name: json.now_playing.name,
-            artist: json.now_playing.artist,
-            image: json.now_playing.image,
-            playing: offset < json.now_playing.duration,
-            users: json.users
-          });
-        }
-      }).catch(function (error) {
-        console.log(error);
-      });
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      if (!this.state.name || !this.state.playing) {
-        return _react2.default.createElement(
-          'div',
-          { className: 'player' },
-          _react2.default.createElement(
-            'h1',
-            null,
-            'Search for a song to play'
-          )
-        );
-      } else {
-        return _react2.default.createElement(
-          'div',
-          { className: 'player' },
-          _react2.default.createElement(
-            'h1',
-            null,
-            'Now Playing'
-          ),
-          _react2.default.createElement('img', { src: this.state.image }),
-          _react2.default.createElement(
-            'h2',
-            null,
-            this.state.name,
-            ' - ',
-            this.state.artist
-          ),
-          _react2.default.createElement(
-            'p',
-            null,
-            'Listeners: ',
-            this.state.users
-          )
-        );
-      }
-    }
-  }]);
-
-  return Player;
-}(_react2.default.Component);
-
-var ResultsList = function (_React$Component5) {
-  _inherits(ResultsList, _React$Component5);
+var ResultsList = function (_React$Component4) {
+  _inherits(ResultsList, _React$Component4);
 
   function ResultsList() {
     _classCallCheck(this, ResultsList);
@@ -10357,20 +10248,20 @@ var ResultsList = function (_React$Component5) {
   return ResultsList;
 }(_react2.default.Component);
 
-var SearchBar = function (_React$Component6) {
-  _inherits(SearchBar, _React$Component6);
+var SearchBar = function (_React$Component5) {
+  _inherits(SearchBar, _React$Component5);
 
   function SearchBar(props) {
     _classCallCheck(this, SearchBar);
 
-    var _this7 = _possibleConstructorReturn(this, (SearchBar.__proto__ || Object.getPrototypeOf(SearchBar)).call(this, props));
+    var _this5 = _possibleConstructorReturn(this, (SearchBar.__proto__ || Object.getPrototypeOf(SearchBar)).call(this, props));
 
-    _this7.handleFocus = _this7.handleFocus.bind(_this7);
-    _this7.handleBlur = _this7.handleBlur.bind(_this7);
+    _this5.handleFocus = _this5.handleFocus.bind(_this5);
+    _this5.handleBlur = _this5.handleBlur.bind(_this5);
 
-    _this7.handleSearchTextInput = _this7.handleSearchTextInput.bind(_this7);
+    _this5.handleSearchTextInput = _this5.handleSearchTextInput.bind(_this5);
     var timeouted;
-    return _this7;
+    return _this5;
   }
 
   _createClass(SearchBar, [{
@@ -10403,29 +10294,245 @@ var SearchBar = function (_React$Component6) {
   return SearchBar;
 }(_react2.default.Component);
 
-var App = function (_React$Component7) {
-  _inherits(App, _React$Component7);
+var Helper = function (_React$Component6) {
+  _inherits(Helper, _React$Component6);
+
+  function Helper(props) {
+    _classCallCheck(this, Helper);
+
+    // questions
+    var _this6 = _possibleConstructorReturn(this, (Helper.__proto__ || Object.getPrototypeOf(Helper)).call(this, props));
+
+    _this6.questions = ["need help?", "is spotify open and running?", "can you play a song from the spotify app?"];
+    _this6.questionIndex = 0;
+    _this6.state = {
+      isWorking: true,
+      question: _this6.questions[_this6.questionIndex]
+    };
+    _this6.handleClick = _this6.handleClick.bind(_this6);
+    return _this6;
+  }
+
+  _createClass(Helper, [{
+    key: 'handleClick',
+    value: function handleClick() {
+      client.join();
+      if (this.questionIndex == 2) {
+        this.questionIndex = 0;
+      } else {
+        this.questionIndex += 1;
+      }
+
+      this.setState({
+        question: this.questions[this.questionIndex]
+      });
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      return _react2.default.createElement(
+        'table',
+        { id: 'helper' },
+        _react2.default.createElement(
+          'tr',
+          null,
+          _react2.default.createElement('td', null),
+          _react2.default.createElement(
+            'span',
+            null,
+            this.state.question
+          ),
+          _react2.default.createElement(
+            'button',
+            { onClick: this.handleClick, type: 'button' },
+            'Yes'
+          )
+        )
+      );
+    }
+  }]);
+
+  return Helper;
+}(_react2.default.Component);
+
+var Player = function (_React$Component7) {
+  _inherits(Player, _React$Component7);
+
+  function Player(props) {
+    _classCallCheck(this, Player);
+
+    var _this7 = _possibleConstructorReturn(this, (Player.__proto__ || Object.getPrototypeOf(Player)).call(this, props));
+
+    _this7.state = {
+      name: "",
+      artist: "",
+      image: "",
+      isPlaying: false,
+      users: []
+    };
+    _this7.handlePlayingChange = _this7.handlePlayingChange.bind(_this7);
+
+    return _this7;
+  }
+
+  _createClass(Player, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var _this8 = this;
+
+      this.getThread();
+      this.timerID = setInterval(function () {
+        return _this8.getThread();
+      }, 5000);
+
+      client.join();
+    }
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      clearInterval(this.timerID);
+    }
+  }, {
+    key: 'handlePlayingChange',
+    value: function handlePlayingChange(isPlaying) {
+      this.props.onPlayingChange(isPlaying);
+    }
+  }, {
+    key: 'getThread',
+    value: function getThread() {
+
+      var self = this;
+      var url = serverURL + '/thread/' + user.tid;
+      var options = {
+        method: 'GET'
+      };
+      var request = fetch(url, options);
+      request.then(function (response) {
+        return response.json();
+      }).then(function (json) {
+        if (json.now_playing !== undefined) {
+          var offset = Date.now() - json.now_playing.start;
+
+          var isPlaying = offset < json.now_playing.duration;
+          console.log("current isPlaying: ", isPlaying);
+          console.log("state isPlaying: ", self.state.isPlaying);
+
+          if (isPlaying !== self.state.isPlaying) {
+            self.handlePlayingChange(isPlaying);
+          }
+
+          self.setState({
+            name: json.now_playing.name,
+            artist: json.now_playing.artist,
+            image: json.now_playing.image,
+            isPlaying: isPlaying,
+            users: json.users
+          });
+        }
+      }).catch(function (error) {
+        console.log(error);
+      });
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      if (!this.state.name || !this.state.isPlaying) {
+        return _react2.default.createElement(
+          'ul',
+          { id: 'player' },
+          _react2.default.createElement(
+            'li',
+            { className: 'header' },
+            'No song queued :('
+          )
+        );
+      } else {
+        return _react2.default.createElement(
+          'ul',
+          { id: 'player' },
+          _react2.default.createElement(
+            'li',
+            { className: 'header' },
+            'Now Playing'
+          ),
+          _react2.default.createElement(
+            'li',
+            null,
+            _react2.default.createElement(
+              'table',
+              null,
+              _react2.default.createElement(
+                'tbody',
+                null,
+                _react2.default.createElement(
+                  'tr',
+                  null,
+                  _react2.default.createElement(
+                    'td',
+                    null,
+                    _react2.default.createElement('img', { src: this.state.image })
+                  ),
+                  _react2.default.createElement(
+                    'td',
+                    null,
+                    _react2.default.createElement(
+                      'span',
+                      null,
+                      this.state.name,
+                      ' - ',
+                      this.state.artist
+                    )
+                  )
+                ),
+                _react2.default.createElement(
+                  'tr',
+                  null,
+                  _react2.default.createElement(
+                    'li',
+                    { className: 'header' },
+                    'Listeners'
+                  ),
+                  _react2.default.createElement(
+                    'li',
+                    null,
+                    this.state.users
+                  )
+                )
+              )
+            )
+          )
+        );
+      }
+    }
+  }]);
+
+  return Player;
+}(_react2.default.Component);
+
+var App = function (_React$Component8) {
+  _inherits(App, _React$Component8);
 
   function App(props) {
     _classCallCheck(this, App);
 
-    var _this8 = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
+    var _this9 = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
 
-    _this8.state = {
+    _this9.state = {
       searchText: '',
       searchResults: [],
       showSearch: false
     };
-    _this8.handleFocusSearch = _this8.handleFocusSearch.bind(_this8);
-    _this8.handleBlurSearch = _this8.handleBlurSearch.bind(_this8);
-    _this8.handleSearchTextInput = _this8.handleSearchTextInput.bind(_this8);
-    return _this8;
+    _this9.handleFocusSearch = _this9.handleFocusSearch.bind(_this9);
+    _this9.handleBlurSearch = _this9.handleBlurSearch.bind(_this9);
+    _this9.handleSearchTextInput = _this9.handleSearchTextInput.bind(_this9);
+    _this9.handlePlayingChange = _this9.handlePlayingChange.bind(_this9);
+    return _this9;
   }
 
   _createClass(App, [{
     key: 'handleSearchTextInput',
     value: function handleSearchTextInput(searchText) {
-      var _this9 = this;
+      var _this10 = this;
 
       this.setState({
         searchText: searchText
@@ -10451,7 +10558,7 @@ var App = function (_React$Component7) {
             return _react2.default.createElement(TrackRow, { trackInfoMap: trackInfoMap, key: item.id.toString() });
           });
 
-          _this9.setState({
+          _this10.setState({
             searchResults: listItems
           });
           return true;
@@ -10479,6 +10586,13 @@ var App = function (_React$Component7) {
       // this.setState({
       //   showSearch:false
       // }) 
+    }
+  }, {
+    key: 'handlePlayingChange',
+    value: function handlePlayingChange(isPlaying) {
+      this.setState({
+        isPlaying: isPlaying
+      });
     }
   }, {
     key: 'render',
@@ -10511,8 +10625,11 @@ var App = function (_React$Component7) {
           onBlurSearch: this.handleBlurSearch
         }),
         _react2.default.createElement(ResultsList, { searchResults: this.state.searchResults }),
-        _react2.default.createElement(SavedSongsList, null),
-        _react2.default.createElement(Player, null)
+        _react2.default.createElement(Player, {
+          onPlayingChange: this.handlePlayingChange
+        }),
+        this.state.isPlaying && _react2.default.createElement(Helper, null),
+        _react2.default.createElement(SavedSongsList, null)
       );
       // playing state
     }

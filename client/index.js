@@ -87,12 +87,10 @@ class Client {
 
 
     fetch(url, options).then(function(response) {
-      if (response.status == 204){
-        //close webview then alert
-          window.alert("Make sure Spotify is opened. Play or pause any song to make sure it's actively running then let Tutti take over.")
-        
-          // window.MessengerExtensions.requestCloseBrowser(null, null)  
-      }
+//       if (response.status == 204){
+//         //close webview then alert
+//           window.alert("Make sure Spotify is opened. Play or pause any song to make sure it's actively running then let Tutti take over.")
+//       }
       
       
     });
@@ -186,10 +184,7 @@ class Client {
           
         })
       } 
-    }, function error(errorCode, errorMessage) {      
-    // An error occurred in the process
-      alert('Make sure Spotify is running on your device');
-    },
+    }, null,
     messageToShare,
     shareMode);    
   }
@@ -357,83 +352,13 @@ class SavedSongsList extends React.Component {
   render() {
     return (
       <ul id="savedSongsList">
-        <li>Recommended</li>
+        <li className="header">Recommended</li>
         {this.state.savedSongs}
       </ul>  
     );
   }
 }
 
-
-class Player extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      name: "",
-      artist: "",
-      image: "",
-      playing: false,
-      users:[]
-    };
-  }
-  componentDidMount() {
-    this.getThread()
-    this.timerID = setInterval(
-      () => this.getThread(),
-      5000
-    );
-    client.join();
-
-
-  }
-  componentWillUnmount() {
-    clearInterval(this.timerID);
-  }
-  getThread() {
-
-    let self = this
-    var url = serverURL + '/thread/' + user.tid 
-    var options = {
-      method:'GET',
-    };
-    let request = fetch(url, options);
-    request.then(function(response){
-      return response.json()
-    }).then(function(json){
-      if (json.now_playing !== undefined){
-        const offset = (Date.now()) - json.now_playing.start;
-
-        self.setState({
-          name:json.now_playing.name,
-          artist:json.now_playing.artist,
-          image:json.now_playing.image,
-          playing: offset < json.now_playing.duration,
-          users: json.users
-        })
-      }
-    }).catch(function(error){
-      console.log(error)
-    });
-  }
-  render() {
-    if (!this.state.name || !this.state.playing){
-      return (
-        <div className="player">
-          <h1>Search for a song to play</h1>
-        </div>
-      );   
-    } else {
-      return (
-        <div className="player">
-          <h1>Now Playing</h1>
-          <img src={this.state.image} />
-          <h2>{this.state.name} - {this.state.artist}</h2>
-          <p>Listeners: {this.state.users}</p> 
-        </div>
-      );
-    }
-  }
-}
 
 class ResultsList extends React.Component {
   render() {
@@ -478,6 +403,142 @@ class SearchBar extends React.Component {
     );
   }
 }
+class Helper extends React.Component {
+  constructor(props) {
+    super(props);
+    // questions
+    this.questions = [
+      "need help?",
+      "is spotify open and running?",
+      "can you play a song from the spotify app?"
+    ]
+    this.questionIndex = 0
+    this.state = {
+      isWorking: true,
+      question: this.questions[this.questionIndex]
+    }
+    this.handleClick = this.handleClick.bind(this);
+  }
+  handleClick(){
+    client.join()
+    if (this.questionIndex == 2){
+      this.questionIndex = 0
+    } else {
+      this.questionIndex += 1
+    }
+    
+    this.setState({
+      question:this.questions[this.questionIndex]
+    })
+  }
+
+  render() {
+    return (
+      <table id="helper"> 
+        <tr>
+          <td>
+          </td>
+          <span>{this.state.question}</span>
+          <button onClick={this.handleClick} type="button">Yes</button>
+        </tr>
+      </table>
+    );
+  }
+
+
+}
+class Player extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      name: "",
+      artist: "",
+      image: "",
+      isPlaying: false,
+      users:[]
+    };
+    this.handlePlayingChange = this.handlePlayingChange.bind(this);
+
+  }
+  componentDidMount() {
+    this.getThread()
+    this.timerID = setInterval(
+      () => this.getThread(),
+      5000
+    );
+    
+    client.join();
+  }
+  componentWillUnmount() {
+    clearInterval(this.timerID);
+  }
+  handlePlayingChange(isPlaying){
+    this.props.onPlayingChange(isPlaying)
+  }
+  getThread() {
+
+    let self = this
+    var url = serverURL + '/thread/' + user.tid 
+    var options = {
+      method:'GET',
+    };
+    let request = fetch(url, options);
+    request.then(function(response){
+      return response.json()
+    }).then(function(json){
+      if (json.now_playing !== undefined){
+        const offset = (Date.now()) - json.now_playing.start;
+        
+        const isPlaying = offset < json.now_playing.duration;
+        console.log("current isPlaying: ", isPlaying);
+        console.log("state isPlaying: ", self.state.isPlaying);
+
+        if (isPlaying !== self.state.isPlaying){
+          self.handlePlayingChange(isPlaying)
+        }
+        
+        self.setState({
+          name:json.now_playing.name,
+          artist:json.now_playing.artist,
+          image:json.now_playing.image,
+          isPlaying: isPlaying,
+          users: json.users
+        })
+      }
+    }).catch(function(error){
+      console.log(error)
+    });
+  }
+  render() {
+    if (!this.state.name || !this.state.isPlaying){
+      return (
+        <ul id="player">
+          <li className="header">No song queued :(</li>
+        </ul>
+      );   
+    } else {
+      return (
+        <ul id="player">
+          <li className="header">Now Playing</li>
+          <li>
+            <table>
+              <tbody>
+                <tr>
+                  <td><img src={this.state.image} /></td>
+                  <td><span>{this.state.name} - {this.state.artist}</span></td>
+                </tr>
+                <tr>
+                  <li className="header">Listeners</li>
+                  <li>{this.state.users}</li> 
+                </tr>
+              </tbody>
+            </table>
+          </li>
+        </ul>
+      );
+    }
+  }
+}
 
 
 class App extends React.Component {
@@ -491,6 +552,7 @@ class App extends React.Component {
     this.handleFocusSearch = this.handleFocusSearch.bind(this);
     this.handleBlurSearch = this.handleBlurSearch.bind(this);
     this.handleSearchTextInput = this.handleSearchTextInput.bind(this);
+    this.handlePlayingChange = this.handlePlayingChange.bind(this);
   }
 
   handleSearchTextInput(searchText) {
@@ -545,6 +607,11 @@ class App extends React.Component {
     //   showSearch:false
     // }) 
   }
+  handlePlayingChange(isPlaying){
+    this.setState({
+      isPlaying: isPlaying
+    });
+  }
 
   render() {
     // searching state
@@ -567,16 +634,21 @@ class App extends React.Component {
     
     return (
       <div>
-      <SearchBar
-        searchText={this.state.searchText}
-        onSearchTextInput={this.handleSearchTextInput}
-        onFocusSearch={this.handleFocusSearch}
-        onBlurSearch={this.handleBlurSearch}
-      />
-      <ResultsList searchResults={this.state.searchResults}/>
-      <SavedSongsList/>
-      <Player/>
+        <SearchBar
+          searchText={this.state.searchText}
+          onSearchTextInput={this.handleSearchTextInput}
+          onFocusSearch={this.handleFocusSearch}
+          onBlurSearch={this.handleBlurSearch}
+        />
+        <ResultsList searchResults={this.state.searchResults}/>
+        <Player
+          onPlayingChange={this.handlePlayingChange}
+        />
+        {this.state.isPlaying && <Helper/>}
+        <SavedSongsList/>
       </div>
+
+
     );
     // playing state
 
