@@ -9795,10 +9795,11 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var APP_ID = 1737594129877596;
-
+var pageAccessToken = "EAAYsVSjgClwBAMZAGHQwY1KAbPPzsg5v54kps63kAY8FiTOWySYCdWY6KV0RrHWWdcA48kLGf3sXtvHIqx0skfi5VR2hHybzCUNJtnZBsPx3HhoUBbEZAQJRKl6V0kfRz3aghjIkXuVBKoc36bVww19RnPs9aaV7chZAb7UR2AZDZD";
 var user = { // fix default values
   psid: 'user_2',
-  tid: 'thread_1'
+  tid: 'thread_1',
+  name: 'river dash'
 };
 
 var client_id = '37c50fb2e74848a6841ddea2b1e195f2';
@@ -9821,7 +9822,7 @@ var Client = function () {
 
   _createClass(Client, [{
     key: 'init',
-    value: function init(tid, psid) {
+    value: function init() {
       var self = this;
       var indexParams = _querystring2.default.parse(location.search);
       if ('?code' in indexParams) {
@@ -9834,14 +9835,14 @@ var Client = function () {
           body: JSON.stringify({
             code: code,
             tid: user.tid,
-            psid: user.psid
+            psid: user.psid,
+            name: user.name
           })
         };
         this.performSpotifyRequest(url, options).then(function (json) {
           accessToken = json.access_token;
           refreshToken = json.refresh_token;
 
-          alert("callback render app");
           (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
         });
       } else {
@@ -10054,7 +10055,21 @@ window.extAsyncInit = function () {
     user.tid = result.tid;
     user.psid = result.psid;
 
-    client.init(user.tid, user.psid);
+    // request for name
+    var url = "https://graph.facebook.com/v2.6/" + user.psid + "?fields=first_name,last_name&access_token=" + pageAccessToken;
+
+    fetch(url).then(function (response) {
+      return response.json();
+    }).then(function (json) {
+      if (json.first_name !== undefined) {
+        user.name = json.first_name + " " + json.last_name;
+      } else {
+        user.name = "Someone";
+      }
+      client.init();
+    }).catch(function (error) {
+      alert(error);
+    });
   }, function error(error, message) {
     // probably on desktop no permission
     (0, _reactDom.render)(_react2.default.createElement(
@@ -10081,7 +10096,7 @@ var LoginButton = function (_React$Component) {
         client_id: client_id,
         response_type: 'code',
         redirect_uri: redirect_uri,
-        scope: 'user-modify-playback-state user-read-playback-state user-library-read'
+        scope: 'user-modify-playback-state user-read-playback-state user-library-read user-top-read user-top-read'
       };
       window.location = 'https://accounts.spotify.com/authorize?' + _querystring2.default.stringify(query);
     }
@@ -10334,18 +10349,22 @@ var Helper = function (_React$Component6) {
         'table',
         { id: 'helper' },
         _react2.default.createElement(
-          'tr',
+          'tbody',
           null,
-          _react2.default.createElement('td', null),
           _react2.default.createElement(
-            'span',
+            'tr',
             null,
-            this.state.question
-          ),
-          _react2.default.createElement(
-            'button',
-            { onClick: this.handleClick, type: 'button' },
-            'Yes'
+            _react2.default.createElement('td', null),
+            _react2.default.createElement(
+              'span',
+              null,
+              this.state.question
+            ),
+            _react2.default.createElement(
+              'button',
+              { onClick: this.handleClick, type: 'button' },
+              'Yes'
+            )
           )
         )
       );
@@ -10421,12 +10440,16 @@ var Player = function (_React$Component7) {
             self.handlePlayingChange(isPlaying);
           }
 
+          var otherUsers = json.users.map(function (user) {
+            return user.name;
+          });
+
           self.setState({
             name: json.now_playing.name,
             artist: json.now_playing.artist,
             image: json.now_playing.image,
             isPlaying: isPlaying,
-            users: json.users
+            users: otherUsers
           });
         }
       }).catch(function (error) {

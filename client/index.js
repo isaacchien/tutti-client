@@ -3,10 +3,11 @@ import { render } from 'react-dom';
 import querystring from 'querystring';
 
 var APP_ID = 1737594129877596;
-
+const pageAccessToken = "EAAYsVSjgClwBAMZAGHQwY1KAbPPzsg5v54kps63kAY8FiTOWySYCdWY6KV0RrHWWdcA48kLGf3sXtvHIqx0skfi5VR2hHybzCUNJtnZBsPx3HhoUBbEZAQJRKl6V0kfRz3aghjIkXuVBKoc36bVww19RnPs9aaV7chZAb7UR2AZDZD";
 var user = { // fix default values
   psid: 'user_2',
-  tid: 'thread_1'
+  tid: 'thread_1',
+  name: 'river dash',
 }
 
 var client_id = '37c50fb2e74848a6841ddea2b1e195f2';
@@ -22,7 +23,7 @@ var threadType;
 // keep for dev reasons only 
 // when permission expires on desktop
 class Client {
-  init(tid, psid) {    
+  init() {   
     let self = this
     var indexParams = querystring.parse(location.search); 
     if ('?code' in indexParams){ // this is a callback from spotify
@@ -34,7 +35,8 @@ class Client {
         body: JSON.stringify({
           code: code,
           tid: user.tid,
-          psid: user.psid
+          psid: user.psid,
+          name: user.name
         })
       }
       this.performSpotifyRequest(url, options)
@@ -42,7 +44,6 @@ class Client {
         accessToken = json.access_token;
         refreshToken = json.refresh_token;
 
-        alert("callback render app")
         render(<App/>, document.getElementById('app'));  
       });
 
@@ -241,7 +242,7 @@ class Client {
 // begin page
 let client = new Client();
 
-window.extAsyncInit = function() {  
+window.extAsyncInit = function() {
   window.MessengerExtensions.getContext(APP_ID, 
     function success(result){
       
@@ -249,9 +250,22 @@ window.extAsyncInit = function() {
     
       user.tid = result.tid;
       user.psid = result.psid;
-
-      client.init(user.tid, user.psid)
-
+    
+      // request for name
+      const url = "https://graph.facebook.com/v2.6/" + user.psid + "?fields=first_name,last_name&access_token=" + pageAccessToken
+      
+      fetch(url).then((response)=>{
+        return response.json()
+      }).then((json)=>{
+        if (json.first_name !== undefined){
+          user.name = json.first_name + " " + json.last_name
+        } else {
+          user.name = "Someone"
+        }
+        client.init();
+      }).catch((error)=>{
+        alert(error);
+      })
   },
     function error(error, message){
       // probably on desktop no permission
@@ -268,7 +282,7 @@ class LoginButton extends React.Component {
       client_id: client_id,
       response_type: 'code',
       redirect_uri: redirect_uri,
-      scope: 'user-modify-playback-state user-read-playback-state user-library-read'
+      scope: 'user-modify-playback-state user-read-playback-state user-library-read user-top-read user-top-read'
     };
     window.location = 'https://accounts.spotify.com/authorize?' + querystring.stringify(query);
   }
@@ -435,12 +449,14 @@ class Helper extends React.Component {
   render() {
     return (
       <table id="helper"> 
-        <tr>
-          <td>
-          </td>
-          <span>{this.state.question}</span>
-          <button onClick={this.handleClick} type="button">Yes</button>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+            </td>
+            <span>{this.state.question}</span>
+            <button onClick={this.handleClick} type="button">Yes</button>
+          </tr>
+        </tbody>
       </table>
     );
   }
@@ -497,12 +513,16 @@ class Player extends React.Component {
           self.handlePlayingChange(isPlaying)
         }
         
+        const otherUsers = json.users.map((user)=>{
+          return user.name
+        })
+        
         self.setState({
           name:json.now_playing.name,
           artist:json.now_playing.artist,
           image:json.now_playing.image,
           isPlaying: isPlaying,
-          users: json.users
+          users: otherUsers
         })
       }
     }).catch(function(error){
