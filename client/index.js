@@ -61,6 +61,7 @@ class Client {
           throw Error
         }
       }).then(function(json){
+
         accessToken = json.access_token;
         refreshToken = json.refresh_token;
         
@@ -81,6 +82,7 @@ class Client {
       body: JSON.stringify({
         'tid': user.tid,
         'psid': user.psid,
+        'name': user.name,
         'access_token': accessToken,
         'refresh_token': refreshToken
       })};
@@ -290,8 +292,7 @@ class LoginButton extends React.Component {
     return (
       <div id="login">
       <h1>Tutti</h1>
-      <h3>Listen to any song from Spotify with your friends on Facebook. Make sure Spotify is open on your device and Tutti will take care of the rest.</h3>
-      <button type='button' onClick={this.handleClick}>Login with Spotify</button>
+      <button type='button' onClick={this.handleClick}>Join this session</button>
       </div>
     );
   }  
@@ -422,7 +423,7 @@ class Helper extends React.Component {
     super(props);
     // questions
     this.questions = [
-      "need help?",
+      "music should be playing. need help?",
       "is spotify open and running?",
       "can you play a song from the spotify app?"
     ]

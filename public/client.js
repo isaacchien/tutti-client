@@ -9859,6 +9859,7 @@ var Client = function () {
             throw Error;
           }
         }).then(function (json) {
+
           accessToken = json.access_token;
           refreshToken = json.refresh_token;
 
@@ -9879,6 +9880,7 @@ var Client = function () {
         body: JSON.stringify({
           'tid': user.tid,
           'psid': user.psid,
+          'name': user.name,
           'access_token': accessToken,
           'refresh_token': refreshToken
         }) };
@@ -10112,14 +10114,9 @@ var LoginButton = function (_React$Component) {
           'Tutti'
         ),
         _react2.default.createElement(
-          'h3',
-          null,
-          'Listen to any song from Spotify with your friends on Facebook. Make sure Spotify is open on your device and Tutti will take care of the rest.'
-        ),
-        _react2.default.createElement(
           'button',
           { type: 'button', onClick: this.handleClick },
-          'Login with Spotify'
+          'Join this session'
         )
       );
     }
@@ -10318,7 +10315,7 @@ var Helper = function (_React$Component6) {
     // questions
     var _this6 = _possibleConstructorReturn(this, (Helper.__proto__ || Object.getPrototypeOf(Helper)).call(this, props));
 
-    _this6.questions = ["need help?", "is spotify open and running?", "can you play a song from the spotify app?"];
+    _this6.questions = ["music should be playing. need help?", "is spotify open and running?", "can you play a song from the spotify app?"];
     _this6.questionIndex = 0;
     _this6.state = {
       isWorking: true,
