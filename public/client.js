@@ -9843,7 +9843,11 @@ var Client = function () {
           accessToken = json.access_token;
           refreshToken = json.refresh_token;
 
-          (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
+          (0, _reactDom.render)(_react2.default.createElement(App, {
+            searchText: '',
+            searchResults: [],
+            showSearch: false
+          }), document.getElementById('app'));
         });
       } else {
         var url = serverURL + '/user/' + user.psid;
@@ -9863,7 +9867,11 @@ var Client = function () {
           accessToken = json.access_token;
           refreshToken = json.refresh_token;
 
-          (0, _reactDom.render)(_react2.default.createElement(App, null), document.getElementById('app'));
+          (0, _reactDom.render)(_react2.default.createElement(App, {
+            searchText: '',
+            searchResults: [],
+            showSearch: false
+          }), document.getElementById('app'));
         }).catch(function (error) {
           alert(error);
           (0, _reactDom.render)(_react2.default.createElement(LoginButton, null), document.getElementById('app'));
@@ -9985,8 +9993,14 @@ var Client = function () {
 
           var request = fetch(url, options);
           request.then(function (response) {
-            // hide search and show player
+            // need to clear search
 
+            document.getElementById("searchInput").value = "";
+            (0, _reactDom.render)(_react2.default.createElement(App, {
+              searchText: '',
+              searchResults: [],
+              showSearch: false
+            }), document.getElementById('app'));
           });
         }
       }, null, messageToShare, shareMode);
@@ -10416,8 +10430,8 @@ var Player = function (_React$Component7) {
   }, {
     key: 'getThread',
     value: function getThread() {
-
       var self = this;
+
       var url = serverURL + '/thread/' + user.tid;
       var options = {
         method: 'GET'
@@ -10538,9 +10552,10 @@ var App = function (_React$Component8) {
     var _this9 = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
 
     _this9.state = {
-      searchText: '',
-      searchResults: [],
-      showSearch: false
+      searchText: _this9.props.searchText,
+      searchResults: _this9.props.searchResults,
+      showSearch: _this9.props.showSearch,
+      isPlaying: false
     };
     _this9.handleFocusSearch = _this9.handleFocusSearch.bind(_this9);
     _this9.handleBlurSearch = _this9.handleBlurSearch.bind(_this9);
@@ -10550,6 +10565,17 @@ var App = function (_React$Component8) {
   }
 
   _createClass(App, [{
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(nextProps) {
+      console.log("componentWillReceiveProps: ", nextProps);
+      this.state = {
+        searchText: nextProps.searchText,
+        searchResults: nextProps.searchResults,
+        showSearch: nextProps.showSearch,
+        isPlaying: true
+      };
+    }
+  }, {
     key: 'handleSearchTextInput',
     value: function handleSearchTextInput(searchText) {
       var _this10 = this;

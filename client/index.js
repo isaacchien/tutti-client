@@ -44,7 +44,11 @@ class Client {
         accessToken = json.access_token;
         refreshToken = json.refresh_token;
 
-        render(<App/>, document.getElementById('app'));  
+        render(<App
+               searchText=""
+               searchResults={[]}
+               showSearch={false}
+               />, document.getElementById('app'));  
       });
 
     } else {
@@ -66,7 +70,12 @@ class Client {
         refreshToken = json.refresh_token;
         
         
-        render(<App/>, document.getElementById('app'));  
+        render(<App
+               searchText=""
+               searchResults={[]}
+               showSearch={false}
+               />, document.getElementById('app'));  
+
 
       }).catch(function(error){
         alert(error)
@@ -183,8 +192,15 @@ class Client {
         let request = fetch(url, options);
         request
         .then(function (response) {
-          // hide search and show player
+          // need to clear search
           
+          document.getElementById("searchInput").value = ""
+          render(<App
+                 searchText=""
+                 searchResults={[]}
+                 showSearch={false}
+                 />, document.getElementById('app'));  
+
         })
       } 
     }, null,
@@ -493,8 +509,10 @@ class Player extends React.Component {
     this.props.onPlayingChange(isPlaying)
   }
   getThread() {
-
     let self = this
+
+
+
     var url = serverURL + '/thread/' + user.tid 
     var options = {
       method:'GET',
@@ -566,16 +584,25 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      searchText: '',
-      searchResults: [],
-      showSearch: false
+      searchText: this.props.searchText,
+      searchResults: this.props.searchResults,
+      showSearch: this.props.showSearch,
+      isPlaying: false
     };
     this.handleFocusSearch = this.handleFocusSearch.bind(this);
     this.handleBlurSearch = this.handleBlurSearch.bind(this);
     this.handleSearchTextInput = this.handleSearchTextInput.bind(this);
     this.handlePlayingChange = this.handlePlayingChange.bind(this);
   }
-
+  componentWillReceiveProps(nextProps){
+    console.log("componentWillReceiveProps: ", nextProps);
+    this.state = {
+      searchText: nextProps.searchText,
+      searchResults: nextProps.searchResults,
+      showSearch: nextProps.showSearch,
+      isPlaying: true
+    };
+  }
   handleSearchTextInput(searchText) {
     this.setState({
       searchText: searchText
