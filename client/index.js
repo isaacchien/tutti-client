@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from 'react-dom';
+
 import querystring from 'querystring';
 
 var APP_ID = 1737594129877596;
@@ -338,7 +339,6 @@ class TrackRow extends React.Component {
 
 class SavedSongsList extends React.Component {
   constructor(props){ 
-    console.log("construtor")
     super(props);
     this.state = {
       savedSongs: []
@@ -349,7 +349,6 @@ class SavedSongsList extends React.Component {
     let self = this
     client.getSavedSongs()
     .then((json)=> {
-      console.log("got saved songs")
       var items = json.items;
       const listItems = items.map((item) =>{
         var trackInfoMap = {}
@@ -367,8 +366,6 @@ class SavedSongsList extends React.Component {
           
         return <TrackRow trackInfoMap={trackInfoMap} key={item.track.id} />
       });
-      console.log("items: ", items);
-      console.log("rows: ", listItems);
       self.setState({
         savedSongs: listItems
       });
@@ -382,10 +379,12 @@ class SavedSongsList extends React.Component {
   
   render() {
     return (
-      <ul id="savedSongsList">
-        <li className="header">Recommended</li>
-        {this.state.savedSongs}
-      </ul>  
+      <div className="songs-list">
+        <ul>
+          <li className="header">Recommended</li>
+          {this.state.savedSongs}
+        </ul>  
+      </div>
     );
   }
 }
@@ -395,9 +394,11 @@ class ResultsList extends React.Component {
   render() {
     // search spotify
     return(
-      <ul id="resultsList">
-        {this.props.searchResults}
-      </ul>
+      <div className="songs-list">
+        <ul>
+          {this.props.searchResults}
+        </ul>
+      </div>
     );
   }
 }
@@ -439,9 +440,9 @@ class Helper extends React.Component {
     super(props);
     // questions
     this.questions = [
-      "music should be playing. need help?",
-      "is spotify open and running?",
-      "can you play a song from the spotify app?"
+      "Music should be playing. Need help?",
+      "Is Spotify open and running?",
+      "Can you play a song from the Spotify app?"
     ]
     this.questionIndex = 0
     this.state = {
@@ -465,16 +466,12 @@ class Helper extends React.Component {
 
   render() {
     return (
-      <table id="helper"> 
-        <tbody>
-          <tr>
-            <td>
-            </td>
-            <span>{this.state.question}</span>
-            <button onClick={this.handleClick} type="button">Yes</button>
-          </tr>
-        </tbody>
-      </table>
+      <li>
+        <div className="helper">
+          <span>{this.state.question}</span>
+          <button onClick={this.handleClick} type="button">Yes</button>
+        </div>
+      </li>
     );
   }
 
@@ -525,8 +522,6 @@ class Player extends React.Component {
         const offset = (Date.now()) - json.now_playing.start;
         
         const isPlaying = offset < json.now_playing.duration;
-        console.log("current isPlaying: ", isPlaying);
-        console.log("state isPlaying: ", self.state.isPlaying);
 
         if (isPlaying !== self.state.isPlaying){
           self.handlePlayingChange(isPlaying)
@@ -549,31 +544,36 @@ class Player extends React.Component {
     });
   }
   render() {
+    const otherUsers = this.state.users.filter(e => e !== user.name);
+    console.log("otherUsers: ", otherUsers);
+    const listeners = "You, " + otherUsers.join(", ")
+    
     if (!this.state.name || !this.state.isPlaying){
       return (
-        <ul id="player">
-          <li className="header">No song queued :(</li>
-        </ul>
+        <div className="player">
+          <ul>
+            <li className="header">No song queued :(</li>
+          </ul>
+        </div>
       );   
     } else {
       return (
-        <ul id="player">
-          <li className="header">Now Playing</li>
-          <li>
-            <table>
-              <tbody>
-                <tr>
-                  <td><img src={this.state.image} /></td>
-                  <td><span>{this.state.name} - {this.state.artist}</span></td>
-                </tr>
-                <tr>
-                  <li className="header">Listeners</li>
-                  <li>{this.state.users}</li> 
-                </tr>
-              </tbody>
-            </table>
-          </li>
-        </ul>
+        <div className="player">
+          <ul>
+            <li className="header">Now Playing</li>
+            <li>
+              <div className="now-playing">
+                <img src={this.state.image}/>
+                <div className="title">{this.state.name}</div>
+                <div className="subtitle">{this.state.artist}</div>
+              </div>
+            </li>
+            <li className="header">Listeners</li>
+            <li>{listeners}</li>
+            <Helper/>
+
+          </ul>
+        </div>
       );
     }
   }
@@ -595,7 +595,6 @@ class App extends React.Component {
     this.handlePlayingChange = this.handlePlayingChange.bind(this);
   }
   componentWillReceiveProps(nextProps){
-    console.log("componentWillReceiveProps: ", nextProps);
     this.state = {
       searchText: nextProps.searchText,
       searchResults: nextProps.searchResults,
@@ -650,7 +649,6 @@ class App extends React.Component {
     })
   }
   handleBlurSearch(){
-    console.log("blurring")
     // this.setState({
     //   showSearch:false
     // }) 
@@ -692,7 +690,6 @@ class App extends React.Component {
         <Player
           onPlayingChange={this.handlePlayingChange}
         />
-        {this.state.isPlaying && <Helper/>}
         <SavedSongsList/>
       </div>
 

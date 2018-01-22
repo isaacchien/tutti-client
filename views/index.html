@@ -21,9 +21,14 @@
         color: #999;
         text-transform: uppercase;
       }
-      #player img {
+      .now-playing {
+        overflow: hidden;
+      }
+      .now-playing img {
         width: 100px;
-        height: auto
+        height: auto;
+        margin-right: 15px;
+        float: left;
       }
       #login h1 {
         position: relative;
@@ -97,6 +102,10 @@
         color: #666;
         font-size: 14px;
       }
+      
+      .helper button {
+        margin-left: 20px
+      }
       .loader {
         border: 8px solid #f3f3f3; /* Light grey */
         border-top: 8px solid black; /* Blue */
@@ -115,6 +124,8 @@
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
       }
+      
+
     </style>
   
   </head>

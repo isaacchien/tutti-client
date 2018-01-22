@@ -10186,8 +10186,6 @@ var SavedSongsList = function (_React$Component3) {
   function SavedSongsList(props) {
     _classCallCheck(this, SavedSongsList);
 
-    console.log("construtor");
-
     var _this3 = _possibleConstructorReturn(this, (SavedSongsList.__proto__ || Object.getPrototypeOf(SavedSongsList)).call(this, props));
 
     _this3.state = {
@@ -10201,7 +10199,6 @@ var SavedSongsList = function (_React$Component3) {
     value: function componentDidMount() {
       var self = this;
       client.getSavedSongs().then(function (json) {
-        console.log("got saved songs");
         var items = json.items;
         var listItems = items.map(function (item) {
           var trackInfoMap = {};
@@ -10219,8 +10216,6 @@ var SavedSongsList = function (_React$Component3) {
 
           return _react2.default.createElement(TrackRow, { trackInfoMap: trackInfoMap, key: item.track.id });
         });
-        console.log("items: ", items);
-        console.log("rows: ", listItems);
         self.setState({
           savedSongs: listItems
         });
@@ -10235,14 +10230,18 @@ var SavedSongsList = function (_React$Component3) {
     key: 'render',
     value: function render() {
       return _react2.default.createElement(
-        'ul',
-        { id: 'savedSongsList' },
+        'div',
+        { className: 'songs-list' },
         _react2.default.createElement(
-          'li',
-          { className: 'header' },
-          'Recommended'
-        ),
-        this.state.savedSongs
+          'ul',
+          null,
+          _react2.default.createElement(
+            'li',
+            { className: 'header' },
+            'Recommended'
+          ),
+          this.state.savedSongs
+        )
       );
     }
   }]);
@@ -10264,9 +10263,13 @@ var ResultsList = function (_React$Component4) {
     value: function render() {
       // search spotify
       return _react2.default.createElement(
-        'ul',
-        { id: 'resultsList' },
-        this.props.searchResults
+        'div',
+        { className: 'songs-list' },
+        _react2.default.createElement(
+          'ul',
+          null,
+          this.props.searchResults
+        )
       );
     }
   }]);
@@ -10329,7 +10332,7 @@ var Helper = function (_React$Component6) {
     // questions
     var _this6 = _possibleConstructorReturn(this, (Helper.__proto__ || Object.getPrototypeOf(Helper)).call(this, props));
 
-    _this6.questions = ["music should be playing. need help?", "is spotify open and running?", "can you play a song from the spotify app?"];
+    _this6.questions = ["Music should be playing. Need help?", "Is Spotify open and running?", "Can you play a song from the Spotify app?"];
     _this6.questionIndex = 0;
     _this6.state = {
       isWorking: true,
@@ -10357,25 +10360,20 @@ var Helper = function (_React$Component6) {
     key: 'render',
     value: function render() {
       return _react2.default.createElement(
-        'table',
-        { id: 'helper' },
+        'li',
+        null,
         _react2.default.createElement(
-          'tbody',
-          null,
+          'div',
+          { className: 'helper' },
           _react2.default.createElement(
-            'tr',
+            'span',
             null,
-            _react2.default.createElement('td', null),
-            _react2.default.createElement(
-              'span',
-              null,
-              this.state.question
-            ),
-            _react2.default.createElement(
-              'button',
-              { onClick: this.handleClick, type: 'button' },
-              'Yes'
-            )
+            this.state.question
+          ),
+          _react2.default.createElement(
+            'button',
+            { onClick: this.handleClick, type: 'button' },
+            'Yes'
           )
         )
       );
@@ -10444,8 +10442,6 @@ var Player = function (_React$Component7) {
           var offset = Date.now() - json.now_playing.start;
 
           var isPlaying = offset < json.now_playing.duration;
-          console.log("current isPlaying: ", isPlaying);
-          console.log("state isPlaying: ", self.state.isPlaying);
 
           if (isPlaying !== self.state.isPlaying) {
             self.handlePlayingChange(isPlaying);
@@ -10470,70 +10466,68 @@ var Player = function (_React$Component7) {
   }, {
     key: 'render',
     value: function render() {
+      var otherUsers = this.state.users.filter(function (e) {
+        return e !== user.name;
+      });
+      console.log("otherUsers: ", otherUsers);
+      var listeners = "You, " + otherUsers.join(", ");
+
       if (!this.state.name || !this.state.isPlaying) {
         return _react2.default.createElement(
-          'ul',
-          { id: 'player' },
+          'div',
+          { className: 'player' },
           _react2.default.createElement(
-            'li',
-            { className: 'header' },
-            'No song queued :('
+            'ul',
+            null,
+            _react2.default.createElement(
+              'li',
+              { className: 'header' },
+              'No song queued :('
+            )
           )
         );
       } else {
         return _react2.default.createElement(
-          'ul',
-          { id: 'player' },
+          'div',
+          { className: 'player' },
           _react2.default.createElement(
-            'li',
-            { className: 'header' },
-            'Now Playing'
-          ),
-          _react2.default.createElement(
-            'li',
+            'ul',
             null,
             _react2.default.createElement(
-              'table',
+              'li',
+              { className: 'header' },
+              'Now Playing'
+            ),
+            _react2.default.createElement(
+              'li',
               null,
               _react2.default.createElement(
-                'tbody',
-                null,
+                'div',
+                { className: 'now-playing' },
+                _react2.default.createElement('img', { src: this.state.image }),
                 _react2.default.createElement(
-                  'tr',
-                  null,
-                  _react2.default.createElement(
-                    'td',
-                    null,
-                    _react2.default.createElement('img', { src: this.state.image })
-                  ),
-                  _react2.default.createElement(
-                    'td',
-                    null,
-                    _react2.default.createElement(
-                      'span',
-                      null,
-                      this.state.name,
-                      ' - ',
-                      this.state.artist
-                    )
-                  )
+                  'div',
+                  { className: 'title' },
+                  this.state.name
                 ),
                 _react2.default.createElement(
-                  'tr',
-                  null,
-                  _react2.default.createElement(
-                    'li',
-                    { className: 'header' },
-                    'Listeners'
-                  ),
-                  _react2.default.createElement(
-                    'li',
-                    null,
-                    this.state.users
-                  )
+                  'div',
+                  { className: 'subtitle' },
+                  this.state.artist
                 )
               )
-            )
+            ),
+            _react2.default.createElement(
+              'li',
+              { className: 'header' },
+              'Listeners'
+            ),
+            _react2.default.createElement(
+              'li',
+              null,
+              listeners
+            ),
+            _react2.default.createElement(Helper, null)
           )
         );
       }
@@ -10567,7 +10561,6 @@ var App = function (_React$Component8) {
   _createClass(App, [{
     key: 'componentWillReceiveProps',
     value: function componentWillReceiveProps(nextProps) {
-      console.log("componentWillReceiveProps: ", nextProps);
       this.state = {
         searchText: nextProps.searchText,
         searchResults: nextProps.searchResults,
@@ -10628,7 +10621,6 @@ var App = function (_React$Component8) {
   }, {
     key: 'handleBlurSearch',
     value: function handleBlurSearch() {
-      console.log("blurring");
       // this.setState({
       //   showSearch:false
       // }) 
@@ -10674,7 +10666,6 @@ var App = function (_React$Component8) {
         _react2.default.createElement(Player, {
           onPlayingChange: this.handlePlayingChange
         }),
-        this.state.isPlaying && _react2.default.createElement(Helper, null),
         _react2.default.createElement(SavedSongsList, null)
       );
       // playing state
