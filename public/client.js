@@ -9925,17 +9925,21 @@ var Client = function () {
   }, {
     key: 'getSavedSongs',
     value: function getSavedSongs() {
-      var query = {
-        limit: '5'
-      };
-      var url = 'https://api.spotify.com/v1/me/tracks?' + _querystring2.default.stringify(query);
+      var url = serverURL + '/recommendations';
       var options = {
-        method: 'GET',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken
-        }
+        method: 'POST',
+        body: JSON.stringify({
+          psid: user.psid,
+          tid: user.tid,
+          access_token: accessToken
+        })
       };
-      return this.performSpotifyRequest(url, options);
+      return fetch(url, options).then(function (response) {
+        return response.json();
+      }).then(function (json) {
+        console.log(json);
+        return json;
+      });
     }
   }, {
     key: 'playSong',
@@ -10199,25 +10203,26 @@ var SavedSongsList = function (_React$Component3) {
     value: function componentDidMount() {
       var self = this;
       client.getSavedSongs().then(function (json) {
-        var items = json.items;
-        var listItems = items.map(function (item) {
+        var tracks = json.tracks;
+        console.log("tracks: ", tracks);
+        var listTracks = tracks.map(function (track) {
           var trackInfoMap = {};
-          var artists = item.track.album.artists;
-          trackInfoMap['name'] = item.track.name;
-          trackInfoMap['uri'] = item.track.uri;
-          trackInfoMap['duration'] = item.track.duration_ms;
-          trackInfoMap['id'] = item.track.id;
-          trackInfoMap['image'] = item.track.album.images[0].url;
+          var artists = track.artists;
+          trackInfoMap['name'] = track.name;
+          trackInfoMap['uri'] = track.uri;
+          trackInfoMap['duration'] = track.duration_ms;
+          trackInfoMap['id'] = track.id;
+          trackInfoMap['image'] = track.album.images[0].url;
           var artistNames = [];
           for (var j = 0; j < artists.length; j++) {
             artistNames.push(artists[j].name);
           }
           trackInfoMap['artist'] = artistNames.join(', ');
 
-          return _react2.default.createElement(TrackRow, { trackInfoMap: trackInfoMap, key: item.track.id });
+          return _react2.default.createElement(TrackRow, { trackInfoMap: trackInfoMap, key: track.id });
         });
         self.setState({
-          savedSongs: listItems
+          savedSongs: listTracks
         });
       }).then(function () {
         // join after component mounts so they dont both try to renew tokens

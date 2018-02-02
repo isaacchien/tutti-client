@@ -126,17 +126,21 @@ class Client {
     return this.performSpotifyRequest(url, options)
   }
   getSavedSongs(){
-    var query = {
-      limit: '5'
+    var url = serverURL + '/recommendations'
+    var options = {
+      method:'POST',
+      body: JSON.stringify({
+        psid: user.psid,
+        tid: user.tid,
+        access_token: accessToken
+      })
     };
-    let url = 'https://api.spotify.com/v1/me/tracks?' + querystring.stringify(query)
-    let options = {
-      method: 'GET',
-      headers: {
-       'Authorization': 'Bearer ' + accessToken
-      }    
-    };
-    return this.performSpotifyRequest(url, options)
+    return fetch(url, options).then((response) => {
+      return response.json()
+    }).then((json) => {
+      console.log(json)
+      return json
+    })
   }
   playSong(trackInfoMap){
     let self = this
@@ -349,25 +353,26 @@ class SavedSongsList extends React.Component {
     let self = this
     client.getSavedSongs()
     .then((json)=> {
-      var items = json.items;
-      const listItems = items.map((item) =>{
+      var tracks = json.tracks;
+      console.log("tracks: ", tracks)
+      const listTracks = tracks.map((track) =>{
         var trackInfoMap = {}
-        var artists = item.track.album.artists;
-        trackInfoMap['name'] = item.track.name;
-        trackInfoMap['uri'] = item.track.uri;
-        trackInfoMap['duration'] = item.track.duration_ms;
-        trackInfoMap['id'] = item.track.id;
-        trackInfoMap['image'] = item.track.album.images[0].url;
+        var artists = track.artists;
+        trackInfoMap['name'] = track.name;
+        trackInfoMap['uri'] = track.uri;
+        trackInfoMap['duration'] = track.duration_ms;
+        trackInfoMap['id'] = track.id;
+        trackInfoMap['image'] = track.album.images[0].url;
         var artistNames = [];
         for (var j = 0; j < artists.length; j++){
           artistNames.push(artists[j].name);
         }
         trackInfoMap['artist'] = artistNames.join(', ');
           
-        return <TrackRow trackInfoMap={trackInfoMap} key={item.track.id} />
+        return <TrackRow trackInfoMap={trackInfoMap} key={track.id} />
       });
       self.setState({
-        savedSongs: listItems
+        savedSongs: listTracks
       });
     }).then(()=> {
       // join after component mounts so they dont both try to renew tokens
