@@ -3,6 +3,7 @@
 Tutti   —    Messenger   extension   for   social   music   listening    (2017   -   ongoing,   1-person   project)
 * Lets   Facebook   friends   in   a   thread   listen   to   music   together   in   realtime   while   chatting.
 * Searches   and   plays   music   for   all   thread   participants   simultaneously.
+* Recommends songs based on the taste profile of everyone in the chat.
 * Designed   and   developed   the   client-side   single   page   app   (React)   and   API   server   (Node.js,   Google
 Cloud   Datastore).
 
@@ -19,9 +20,8 @@ New Users
 ![Search and Share](https://user-images.githubusercontent.com/6413636/34394163-45b05e3e-eb0c-11e7-8198-b954738b01cf.PNG)
 
 3. New users will be prompted to "Login with Spotify"
-4. Now you can see your own library, search for songs, and share sessions with your friends. 
-
-![Tutti](https://user-images.githubusercontent.com/6413636/34394160-45646f1a-eb0c-11e7-9c28-8befefc0f45f.PNG)
+4. Now you can see recommended songs, search for songs, and share sessions with your friends. 
+![Tutti](https://user-images.githubusercontent.com/6413636/36509629-1e26c724-1715-11e8-9fd1-e52aaf8e2347.PNG)
 
 5. Tutti will now be saved in Messenger's Composer Drawer so you can easily access it in any chat.  
 
