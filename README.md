@@ -9,7 +9,7 @@ Cloud   Datastore).
 
 Watch the Demo Video: https://youtu.be/Wn03N4eRnc8
 
-Check out the Backend Repo: https://github.com/isaacchien/tutti
+Check out the Back End Repo: https://github.com/isaacchien/tutti
 
 ## Getting Started
 
